@@ -6,7 +6,7 @@ import MicTierProgress from "../components/MicTierProgress";
 import { MOCK_MIC_TIER_PROGRESS } from "../lib/mockUserPrefs";
 import { DEFAULT_DAILY_CREDITS } from "../lib/jobConfig";
 
-// Mock overview data — replace with Supabase when ready
+// Placeholder overview data — replace with Supabase/backend when wired
 const MOCK_OVERVIEW = {
   projectsCount: 7,
   recentRendersCount: 3,
@@ -20,8 +20,11 @@ export default function DashboardPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <h1 className="mb-2 text-2xl font-bold text-white">Dashboard</h1>
-      <p className="mb-8 text-sm text-[var(--muted)]">
+      <p className="mb-2 text-sm text-[var(--muted)]">
         Your creator overview. Credits refresh daily.
+      </p>
+      <p className="mb-6 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+        <strong>Placeholder data:</strong> Project count, recent renders, followers, plays, rating average, and mic tier progress use demo values until the backend is connected. Credits are live for this session.
       </p>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <OverviewCard
@@ -33,28 +36,33 @@ export default function DashboardPage() {
         <OverviewCard
           title="Projects"
           value={MOCK_OVERVIEW.projectsCount}
-          subtitle="Total saved"
+          subtitle="Total saved · placeholder"
         />
         <OverviewCard
           title="Recent renders"
           value={MOCK_OVERVIEW.recentRendersCount}
-          subtitle="Last 7 days"
+          subtitle="Last 7 days · placeholder"
         />
         <OverviewCard
           title="Followers"
           value={MOCK_OVERVIEW.followers}
+          subtitle="Placeholder"
         />
         <OverviewCard
           title="Total plays"
           value={MOCK_OVERVIEW.plays.toLocaleString()}
+          subtitle="Placeholder"
         />
         <OverviewCard
           title="Rating average"
           value={MOCK_OVERVIEW.ratingAverage}
-          subtitle="Weighted"
+          subtitle="Weighted · placeholder"
         />
       </div>
       <div className="mt-8">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-xs text-[var(--muted)]">Mic tier progress · placeholder until backend wired</span>
+        </div>
         <MicTierProgress data={MOCK_MIC_TIER_PROGRESS} />
       </div>
     </div>

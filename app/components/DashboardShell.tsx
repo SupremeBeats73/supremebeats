@@ -12,7 +12,6 @@ const NAV_ITEMS = [
   { href: "/dashboard/feed", label: "Feed" },
   { href: "/dashboard/collabs", label: "Collabs" },
   { href: "/dashboard/revenue", label: "Revenue" },
-  { href: "/dashboard/marketplace", label: "Marketplace" },
   { href: "/dashboard/profile", label: "Profile" },
   { href: "/dashboard/billing", label: "Billing" },
   { href: "/dashboard/settings", label: "Settings" },
