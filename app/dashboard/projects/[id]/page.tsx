@@ -94,7 +94,7 @@ export default function ProjectDetailPage() {
     const hadPackage = !!youtubePackage;
     try {
       await mockGenerateYouTubePackage(id);
-      if (!hadPackage) addAsset(id, "youtube_package", "YouTube package");
+      if (!hadPackage) await addAsset(id, "youtube_package", "YouTube package");
     } finally {
       setPackagingGenerating(false);
     }

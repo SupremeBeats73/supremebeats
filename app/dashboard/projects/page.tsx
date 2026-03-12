@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useProjects } from "../../context/ProjectsContext";
 
 export default function ProjectsPage() {
-  const { projects } = useProjects();
+  const { projects, projectsLoading } = useProjects();
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -23,7 +23,11 @@ export default function ProjectsPage() {
         </Link>
       </div>
 
-      {projects.length === 0 ? (
+      {projectsLoading ? (
+        <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)]/50 p-12 text-center">
+          <p className="text-[var(--muted)]">Loading projects…</p>
+        </div>
+      ) : projects.length === 0 ? (
         <div className="rounded-xl border border-dashed border-[var(--card-border)] bg-[var(--card-bg)]/50 p-12 text-center">
           <p className="mb-4 text-[var(--muted)]">No projects yet.</p>
           <Link
@@ -35,7 +39,7 @@ export default function ProjectsPage() {
         </div>
       ) : (
         <ul className="space-y-3">
-          {[...projects].reverse().map((p) => (
+          {projects.map((p) => (
             <li key={p.id}>
               <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-4 backdrop-blur-sm">
                 <div>

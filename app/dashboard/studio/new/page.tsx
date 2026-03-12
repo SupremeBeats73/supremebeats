@@ -29,21 +29,24 @@ export default function NewProjectPage() {
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    const project = createProject({
-      name: name || "Untitled Project",
-      genre,
-      bpm,
-      key,
-      mood,
-      duration,
-      instruments,
-      referenceUploads: referenceNote ? [referenceNote] : [],
-    });
-    setSubmitting(false);
-    router.push(`/dashboard/studio?project=${project.id}`);
+    try {
+      const project = await createProject({
+        name: name || "Untitled Project",
+        genre,
+        bpm,
+        key,
+        mood,
+        duration,
+        instruments,
+        referenceUploads: referenceNote ? [referenceNote] : [],
+      });
+      router.push(`/dashboard/studio?project=${project.id}`);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
