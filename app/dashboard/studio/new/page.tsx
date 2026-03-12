@@ -53,7 +53,11 @@ export default function NewProjectPage() {
         });
       }
 
-      if (!user?.id && !authLoading) {
+      if (authLoading) {
+        setSubmitError("Checking sign-in…");
+        return;
+      }
+      if (!user?.id) {
         if (process.env.NODE_ENV === "development") {
           console.error("[NewProject] No authenticated user; cannot create project.");
         }
@@ -110,9 +114,10 @@ export default function NewProjectPage() {
           code: err && typeof err === "object" && "code" in err ? (err as { code: string }).code : undefined,
         });
       }
+      const rlsHint = isRls ? " (Row-level security may be blocking the insert—check Supabase RLS policies for the projects table.)" : "";
       const displayMessage =
-        process.env.NODE_ENV === "development"
-          ? message + (isRls ? " (Row-level security may be blocking the insert—check Supabase RLS policies for the projects table.)" : "")
+        message && message.trim()
+          ? message.trim() + rlsHint
           : "Could not create your project. Please make sure you are signed in and try again.";
       setSubmitError(displayMessage);
     } finally {
