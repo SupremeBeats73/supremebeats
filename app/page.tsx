@@ -1,65 +1,181 @@
-import Image from "next/image";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import SectionWrapper from "./components/SectionWrapper";
+import FeatureCard from "./components/FeatureCard";
+import CTAButton from "./components/CTAButton";
+import CreatorCard from "./components/CreatorCard";
+import TrackCard from "./components/TrackCard";
+
+const FEATURES = [
+  {
+    title: "AI Studio",
+    description:
+      "Generate beats and full tracks with AI. From idea to finished track in minutes.",
+  },
+  {
+    title: "Visual Engine",
+    description:
+      "Stunning visuals for your music. Covers, visuals, and thumbnails that stand out.",
+  },
+  {
+    title: "YouTube Growth Toolkit",
+    description:
+      "Titles, descriptions, tags, and strategies to grow your channel and reach.",
+  },
+  {
+    title: "Creator Network",
+    description:
+      "Connect with producers and artists. Collaborate, compete, and rise together.",
+  },
+  {
+    title: "Smart Discovery",
+    description:
+      "Get your music in front of the right ears. Algorithm-aware discovery tools.",
+  },
+  {
+    title: "Mic Tier Progression",
+    description:
+      "Level up your mic tier. Unlock perks and credibility as you create and engage.",
+  },
+  {
+    title: "Monetization",
+    description:
+      "Turn your creations into revenue. Clear paths to earn from your music.",
+  },
+  {
+    title: "1500 Free Credits Daily",
+    description:
+      "Generous daily credits so you can create every day without blocking your flow.",
+  },
+];
+
+const MOCK_CREATORS = [
+  { name: "Nova Beats", plays: "12.4k", rating: 4.9, micTier: "Mic 5", engagement: "High" },
+  { name: "Luna Drift", plays: "8.2k", rating: 4.8, micTier: "Mic 4", engagement: "Medium" },
+  { name: "Echo Wave", plays: "24.1k", rating: 5.0, micTier: "Mic 5", engagement: "High" },
+];
+
+const MOCK_TRACKS = [
+  { title: "Midnight Drive", creator: "Nova Beats", plays: "5.2k", rating: 4.9, micBadge: "Mic 5", engagement: "High" },
+  { title: "Neon Pulse", creator: "Luna Drift", plays: "3.1k", rating: 4.7, micBadge: "Mic 4", engagement: "Medium" },
+  { title: "Skyline", creator: "Echo Wave", plays: "9.8k", rating: 5.0, micBadge: "Mic 5", engagement: "High" },
+];
+
+function FeatureIcon() {
+  return (
+    <span className="text-2xl opacity-90" aria-hidden>
+      ◆
+    </span>
+  );
+}
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <>
+      <div
+        className="min-h-screen"
+        style={{
+          background:
+            "linear-gradient(135deg, #050508 0%, #0f0a1a 25%, #1a0f2e 50%, #0a1810 75%, #050508 100%)",
+          backgroundSize: "400% 400%",
+          animation: "gradient-shift 18s ease infinite",
+        }}
+      >
+        <Navbar />
+
+        {/* Hero */}
+        <section className="relative flex min-h-[90vh] flex-col items-center justify-center px-4 pt-24 pb-16 text-center sm:px-6">
+          <div className="mx-auto max-w-3xl">
+            <h1 className="text-4xl font-bold tracking-tight text-white drop-shadow-[0_0_40px_rgba(34,197,94,0.2)] sm:text-5xl md:text-6xl lg:text-7xl">
+              Create. Compete. Rise.
+            </h1>
+            <p className="mt-4 text-lg text-[var(--muted)] sm:text-xl md:mt-6">
+              The AI-powered music creator network.
+            </p>
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-4 sm:mt-12">
+              <CTAButton href="/signup">Enter SupremeBeats</CTAButton>
+              <CTAButton href="/signup" variant="secondary">
+                Start Creating
+              </CTAButton>
+            </div>
+          </div>
+        </section>
+
+        {/* Features */}
+        <SectionWrapper id="features">
+          <h2 className="mb-4 text-center text-2xl font-bold text-white sm:text-3xl">
+            Built for creators
+          </h2>
+          <p className="mx-auto mb-12 max-w-xl text-center text-[var(--muted)]">
+            Tools and community to make, share, and grow your music.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {FEATURES.map((f) => (
+              <FeatureCard
+                key={f.title}
+                title={f.title}
+                description={f.description}
+                icon={<FeatureIcon />}
+              />
+            ))}
+          </div>
+        </SectionWrapper>
+
+        {/* Mock creator & track cards */}
+        <SectionWrapper className="border-t border-white/5">
+          <h2 className="mb-4 text-center text-2xl font-bold text-white sm:text-3xl">
+            Creators & tracks
+          </h2>
+          <p className="mx-auto mb-10 max-w-xl text-center text-[var(--muted)]">
+            See what the community is making. Plays, ratings, mic tiers, and more.
+          </p>
+          <div className="mb-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {MOCK_CREATORS.map((c) => (
+              <CreatorCard
+                key={c.name}
+                name={c.name}
+                plays={c.plays}
+                rating={c.rating}
+                micTier={c.micTier}
+                engagement={c.engagement}
+              />
+            ))}
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {MOCK_TRACKS.map((t) => (
+              <TrackCard
+                key={t.title}
+                title={t.title}
+                creator={t.creator}
+                plays={t.plays}
+                rating={t.rating}
+                micBadge={t.micBadge}
+                engagement={t.engagement}
+              />
+            ))}
+          </div>
+        </SectionWrapper>
+
+        {/* Final CTA */}
+        <SectionWrapper>
+          <div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card-bg)] px-6 py-12 text-center backdrop-blur-sm sm:px-10 sm:py-16">
+            <h2 className="text-2xl font-bold text-white sm:text-3xl">
+              Ready to rise?
+            </h2>
+            <p className="mx-auto mt-3 max-w-md text-[var(--muted)]">
+              Join the network. Get 1500 free credits daily. Start creating today.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+              <CTAButton href="/signup">Enter SupremeBeats</CTAButton>
+              <CTAButton href="/signup" variant="secondary">
+                Start Creating
+              </CTAButton>
+            </div>
+          </div>
+        </SectionWrapper>
+
+        <Footer />
+      </div>
+    </>
   );
 }

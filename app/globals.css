@@ -1,8 +1,20 @@
 @import "tailwindcss";
 
+/* SupremeBeats — premium dark cinematic theme */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #050508;
+  --foreground: #f0f0f2;
+  --muted: #9ca3af;
+  --card-bg: rgba(15, 15, 22, 0.85);
+  --card-border: rgba(139, 92, 246, 0.15);
+  --deep-purple: #2d1b4e;
+  --purple-mid: #4c1d95;
+  --purple-glow: #7c3aed;
+  --neon-green: #22c55e;
+  --neon-green-dim: #16a34a;
+  --neon-glow: rgba(34, 197, 94, 0.35);
+  --section-padding: clamp(3rem, 6vw, 5rem);
+  --container-max: 1200px;
 }
 
 @theme inline {
@@ -12,15 +24,14 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
