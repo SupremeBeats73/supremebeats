@@ -136,7 +136,7 @@ export default function StudioPage() {
   const searchParams = useSearchParams();
   const projectId = searchParams.get("project");
   const { user } = useAuth();
-  const { projects, getProject, mockGenerate } = useProjects();
+  const { projects, projectsLoading, getProject, mockGenerate } = useProjects();
   const { submitJob, completeJob, failJob, creditsRemaining } = useJobs();
   const project = projectId ? getProject(projectId) : null;
   const [videoGen, setVideoGen] = useState(false);
@@ -144,7 +144,16 @@ export default function StudioPage() {
   const [coverGen, setCoverGen] = useState(false);
   const [jobError, setJobError] = useState<string | null>(null);
 
-  if (!projectId || !project) {
+  if (process.env.NODE_ENV === "development") {
+    console.log("[Studio] projectId from query", projectId, {
+      projectsCount: projects.length,
+      projectsLoading,
+      hasProject: !!project,
+    });
+  }
+
+  // No project selected: show the default Studio landing.
+  if (!projectId) {
     return (
       <div className="mx-auto max-w-2xl">
         <h1 className="mb-2 text-2xl font-bold text-white">Studio</h1>
@@ -184,6 +193,50 @@ export default function StudioPage() {
             </ul>
           </div>
         )}
+      </div>
+    );
+  }
+
+  // Project id is present but data is still loading from Supabase.
+  if (projectsLoading && !project) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <h1 className="mb-2 text-2xl font-bold text-white">Studio</h1>
+        <p className="mb-6 text-sm text-[var(--muted)]">
+          Loading your project…
+        </p>
+      </div>
+    );
+  }
+
+  // Project id is present but not found after loading.
+  if (projectId && !project) {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[Studio] Project id from query not found in context", {
+        projectId,
+        projects,
+      });
+    }
+    return (
+      <div className="mx-auto max-w-2xl">
+        <h1 className="mb-2 text-2xl font-bold text-white">Studio</h1>
+        <p className="mb-4 text-sm text-[var(--muted)]">
+          The selected project could not be found. It may have been deleted or failed to load.
+        </p>
+        <div className="flex flex-wrap gap-4">
+          <Link
+            href="/dashboard/projects"
+            className="rounded-xl bg-[var(--neon-green)] px-6 py-3 text-sm font-semibold text-black transition-all hover:bg-[var(--neon-green-dim)] hover:shadow-[0_0_24px_var(--neon-glow)]"
+          >
+            View all projects
+          </Link>
+          <Link
+            href="/dashboard/studio/new"
+            className="rounded-xl border border-white/20 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/5"
+          >
+            Create a new project
+          </Link>
+        </div>
       </div>
     );
   }

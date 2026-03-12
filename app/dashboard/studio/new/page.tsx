@@ -22,6 +22,7 @@ export default function NewProjectPage() {
   const [instruments, setInstruments] = useState<string[]>([]);
   const [referenceNote, setReferenceNote] = useState(""); // placeholder for uploads
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const toggleInstrument = (inst: string) => {
     setInstruments((prev) =>
@@ -31,8 +32,22 @@ export default function NewProjectPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError(null);
     setSubmitting(true);
     try {
+      if (process.env.NODE_ENV === "development") {
+        console.log("[NewProject] Submitting project", {
+          name,
+          genre,
+          bpm,
+          key,
+          mood,
+          duration,
+          instruments,
+          referenceUploads: referenceNote ? [referenceNote] : [],
+        });
+      }
+
       const project = await createProject({
         name: name || "Untitled Project",
         genre,
@@ -43,7 +58,36 @@ export default function NewProjectPage() {
         instruments,
         referenceUploads: referenceNote ? [referenceNote] : [],
       });
-      router.push(`/dashboard/studio?project=${project.id}`);
+
+      if (!project || !project.id) {
+        console.error("[NewProject] Project created without a valid id", project);
+        setSubmitError(
+          "Project was created, but it did not return a valid id. Please try again."
+        );
+        return;
+      }
+
+      const target = `/dashboard/studio?project=${project.id}`;
+      if (process.env.NODE_ENV === "development") {
+        console.log("[NewProject] Navigating to Studio with project", {
+          projectId: project.id,
+          target,
+        });
+      }
+
+      try {
+        router.push(target);
+      } catch (err) {
+        console.error("[NewProject] Navigation to Studio failed", err);
+        setSubmitError(
+          "Project was created, but opening the Studio failed. You can open it from your Projects page."
+        );
+      }
+    } catch (err) {
+      console.error("[NewProject] Project creation failed", err);
+      setSubmitError(
+        "Could not create your project. Please make sure you are signed in and try again."
+      );
     } finally {
       setSubmitting(false);
     }
@@ -218,6 +262,9 @@ export default function NewProjectPage() {
             Cancel
           </Link>
         </div>
+        {submitError && (
+          <p className="pt-2 text-sm text-red-400">{submitError}</p>
+        )}
       </form>
     </div>
   );
