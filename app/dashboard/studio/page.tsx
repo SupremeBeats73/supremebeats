@@ -344,7 +344,9 @@ export default function StudioPage() {
         <div>
           <h1 className="text-2xl font-bold text-white">Studio</h1>
           <p className="text-sm text-[var(--muted)]">
-            {project.name} · {project.genre || "—"} · {project.bpm} BPM
+            {project
+              ? `${project.name} · ${project.genre || "—"} · ${project.bpm} BPM`
+              : "Project not available"}
           </p>
           <p className="mt-1 text-xs text-[var(--muted)]">Credits: {creditsRemaining}</p>
         </div>
