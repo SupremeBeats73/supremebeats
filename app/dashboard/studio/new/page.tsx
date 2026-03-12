@@ -101,24 +101,24 @@ export default function NewProjectPage() {
         );
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+      const raw =
+        err instanceof Error
+          ? err.message
+          : typeof err === "object" && err !== null && "message" in err
+            ? String((err as { message: unknown }).message)
+            : String(err);
+      const message = (raw && raw.trim()) || "";
       const isRls =
-        typeof message === "string" &&
+        message.length > 0 &&
         (message.toLowerCase().includes("row-level security") ||
           message.toLowerCase().includes("policy") ||
           message.toLowerCase().includes("violates"));
-      if (process.env.NODE_ENV === "development") {
-        console.error("[NewProject] Project creation failed", {
-          error: err,
-          message,
-          code: err && typeof err === "object" && "code" in err ? (err as { code: string }).code : undefined,
-        });
-      }
+      console.error("[NewProject] Project creation failed — raw error:", err, "extracted message:", message);
       const rlsHint = isRls ? " (Row-level security may be blocking the insert—check Supabase RLS policies for the projects table.)" : "";
       const displayMessage =
-        message && message.trim()
-          ? message.trim() + rlsHint
-          : "Could not create your project. Please make sure you are signed in and try again.";
+        message
+          ? message + rlsHint
+          : "Could not create your project. Please make sure you are signed in and try again. (Check the browser console for details.)";
       setSubmitError(displayMessage);
     } finally {
       setSubmitting(false);
