@@ -107,7 +107,18 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
 
   const createProject = useCallback(
     async (data: Omit<Project, "id" | "createdAt" | "updatedAt">): Promise<Project> => {
-      if (!user?.id) throw new Error("Must be signed in to create a project");
+      if (!user?.id) {
+        if (process.env.NODE_ENV === "development") {
+          console.error("[ProjectsContext] createProject called but user is not signed in", {
+            hasUser: !!user,
+            userId: user?.id ?? null,
+          });
+        }
+        throw new Error("Must be signed in to create a project");
+      }
+      if (process.env.NODE_ENV === "development") {
+        console.log("[ProjectsContext] createProject calling Supabase with user_id:", user.id);
+      }
       const project = await createProjectInSupabase(user.id, data);
       setProjects((prev) => [...prev, project]);
       return project;

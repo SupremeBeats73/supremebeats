@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useAuth } from "../../../context/AuthContext";
 import { useProjects } from "../../../context/ProjectsContext";
 
 const GENRES = ["Hip-Hop", "R&B", "Pop", "Electronic", "Trap", "Lo-Fi", "Other"];
@@ -12,6 +13,7 @@ const INSTRUMENT_OPTIONS = ["Drums", "Bass", "Keys", "Synth", "Strings", "Guitar
 
 export default function NewProjectPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const { createProject } = useProjects();
   const [name, setName] = useState("");
   const [genre, setGenre] = useState("");
@@ -37,6 +39,9 @@ export default function NewProjectPage() {
     try {
       if (process.env.NODE_ENV === "development") {
         console.log("[NewProject] Submitting project", {
+          hasUser: !!user,
+          userId: user?.id ?? null,
+          authLoading,
           name,
           genre,
           bpm,
@@ -46,6 +51,14 @@ export default function NewProjectPage() {
           instruments,
           referenceUploads: referenceNote ? [referenceNote] : [],
         });
+      }
+
+      if (!user?.id && !authLoading) {
+        if (process.env.NODE_ENV === "development") {
+          console.error("[NewProject] No authenticated user; cannot create project.");
+        }
+        setSubmitError("You must be signed in to create a project.");
+        return;
       }
 
       const project = await createProject({
@@ -84,10 +97,24 @@ export default function NewProjectPage() {
         );
       }
     } catch (err) {
-      console.error("[NewProject] Project creation failed", err);
-      setSubmitError(
-        "Could not create your project. Please make sure you are signed in and try again."
-      );
+      const message = err instanceof Error ? err.message : String(err);
+      const isRls =
+        typeof message === "string" &&
+        (message.toLowerCase().includes("row-level security") ||
+          message.toLowerCase().includes("policy") ||
+          message.toLowerCase().includes("violates"));
+      if (process.env.NODE_ENV === "development") {
+        console.error("[NewProject] Project creation failed", {
+          error: err,
+          message,
+          code: err && typeof err === "object" && "code" in err ? (err as { code: string }).code : undefined,
+        });
+      }
+      const displayMessage =
+        process.env.NODE_ENV === "development"
+          ? message + (isRls ? " (Row-level security may be blocking the insert—check Supabase RLS policies for the projects table.)" : "")
+          : "Could not create your project. Please make sure you are signed in and try again.";
+      setSubmitError(displayMessage);
     } finally {
       setSubmitting(false);
     }

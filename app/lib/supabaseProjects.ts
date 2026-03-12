@@ -41,12 +41,32 @@ export async function createProjectInSupabase(
     created_at: now,
     updated_at: now,
   };
+  if (process.env.NODE_ENV === "development") {
+    console.log("[supabaseProjects] createProjectInSupabase inserting", {
+      user_id: userId,
+      name: row.name,
+      table: "projects",
+    });
+  }
   const { data: inserted, error } = await supabase
     .from("projects")
     .insert(row)
     .select("id, user_id, name, genre, bpm, key, mood, duration, instruments, reference_uploads, created_at, updated_at")
     .single();
-  if (error) throw error;
+  if (error) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("[supabaseProjects] createProjectInSupabase Supabase error", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+      });
+    }
+    const errMessage =
+      error.message +
+      (error.code ? ` (code: ${error.code})` : "") +
+      (error.details ? ` — ${JSON.stringify(error.details)}` : "");
+    throw new Error(errMessage);
+  }
   return rowToProject(inserted);
 }
 
