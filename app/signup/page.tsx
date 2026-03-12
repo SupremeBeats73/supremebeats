@@ -21,10 +21,15 @@ export default function SignupPage() {
     setError(null);
     setSignupSuccess(false);
     setLoading(true);
-    const { data, error: err } = await supabase.auth.signUp(
-      { email, password },
-      { data: { username: username || undefined } }
-    );
+    const { data, error: err } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          username: username || undefined,
+        },
+      },
+    });
     setLoading(false);
     if (err) {
       setError(formatAuthError(err.message));
