@@ -22,10 +22,33 @@ function CopyButton({ text, label }: { text: string; label: string }) {
     <button
       type="button"
       onClick={copy}
-      className="rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[var(--neon-green)]/20 hover:border-[var(--neon-green)]/40"
+      className="rounded-lg border border-[var(--purple-glow)]/30 bg-[#0f0a1a]/80 px-3 py-1.5 text-xs font-medium text-white transition-all hover:border-[var(--neon-green)]/50 hover:shadow-[0_0_12px_rgba(34,197,94,0.25)]"
     >
-      {copied ? "Copied" : "Copy"}
+      {copied ? "Copied" : "One-Click Copy"}
     </button>
+  );
+}
+
+function ReadinessScoreVisual({ score }: { score: number }) {
+  const pct = Math.min(100, Math.max(0, score));
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-xs">
+        <span className="font-medium uppercase tracking-wider text-[var(--muted)]">
+          SEO Optimized
+        </span>
+        <span className="font-semibold text-white">{score}/100</span>
+      </div>
+      <div className="relative h-2.5 overflow-hidden rounded-full border border-white/10 bg-[#0f0a1a]">
+        <div
+          className="absolute inset-y-0 left-0 rounded-full bg-[var(--neon-green)] transition-all duration-500 ease-out"
+          style={{
+            width: `${pct}%`,
+            boxShadow: "0 0 20px rgba(34,197,94,0.6), 0 0 40px rgba(34,197,94,0.3)",
+          }}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -38,7 +61,7 @@ export default function YouTubePackagingPanel({
 }: YouTubePackagingPanelProps) {
   if (!data) {
     return (
-      <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-6 backdrop-blur-sm">
+      <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-6 shadow-[0_0_28px_rgba(124,58,237,0.12)] backdrop-blur-sm">
         <h2 className="mb-2 text-sm font-medium uppercase tracking-wider text-[var(--muted)]">
           YouTube packaging
         </h2>
@@ -51,7 +74,7 @@ export default function YouTubePackagingPanel({
           disabled={generating}
           className="rounded-xl bg-[var(--neon-green)] px-5 py-2.5 text-sm font-semibold text-black transition-all hover:bg-[var(--neon-green-dim)] hover:shadow-[0_0_24px_var(--neon-glow)] disabled:opacity-60"
         >
-          {generating ? "Generating…" : "Generate packaging"}
+          {generating ? "Generating…" : "Generate YouTube Strategy"}
         </button>
       </div>
     );
@@ -60,24 +83,16 @@ export default function YouTubePackagingPanel({
   const tagsText = data.tags.join(", ");
   const hashtagsText = data.hashtags.join(" ");
 
+  const textAreaBase =
+    "rounded-lg border border-white/10 bg-[#0f0a1a] px-3 py-2.5 text-sm text-white placeholder-[var(--muted)] focus:border-[var(--purple-glow)]/40 focus:outline-none focus:ring-1 focus:ring-[var(--purple-glow)]/30 transition-colors";
+
   return (
-    <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-6 backdrop-blur-sm">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+    <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-6 shadow-[0_0_28px_rgba(124,58,237,0.12)] backdrop-blur-sm">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-sm font-medium uppercase tracking-wider text-[var(--muted)]">
           YouTube packaging
         </h2>
         <div className="flex items-center gap-3">
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-semibold ${
-              data.readinessScore >= 80
-                ? "bg-[var(--neon-green)]/20 text-[var(--neon-green)]"
-                : data.readinessScore >= 60
-                  ? "bg-amber-500/20 text-amber-400"
-                  : "bg-[var(--muted)]/20 text-[var(--muted)]"
-            }`}
-          >
-            Readiness: {data.readinessScore}/100
-          </span>
           <button
             type="button"
             onClick={onGenerate}
@@ -89,45 +104,46 @@ export default function YouTubePackagingPanel({
         </div>
       </div>
 
-      <div className="space-y-4">
+      {/* Readiness Score visual */}
+      <div className="mb-6 rounded-lg border border-[var(--purple-glow)]/20 bg-black/30 p-4">
+        <ReadinessScoreVisual score={data.readinessScore} />
+      </div>
+
+      <div className="space-y-5">
         <div>
-          <div className="mb-1 flex items-center justify-between gap-2">
+          <div className="mb-1.5 flex items-center justify-between gap-2">
             <label className="text-xs font-medium text-[var(--muted)]">SEO title</label>
             <CopyButton text={data.title} label="title" />
           </div>
-          <p className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white">
-            {data.title}
-          </p>
+          <p className={`${textAreaBase} min-h-[2.5rem]`}>{data.title}</p>
         </div>
 
         <div>
-          <div className="mb-1 flex items-center justify-between gap-2">
+          <div className="mb-1.5 flex items-center justify-between gap-2">
             <label className="text-xs font-medium text-[var(--muted)]">Description</label>
             <CopyButton text={data.description} label="description" />
           </div>
-          <pre className="max-h-32 overflow-auto rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white whitespace-pre-wrap font-sans">
+          <pre
+            className={`max-h-36 overflow-auto whitespace-pre-wrap font-sans ${textAreaBase}`}
+          >
             {data.description}
           </pre>
         </div>
 
         <div>
-          <div className="mb-1 flex items-center justify-between gap-2">
+          <div className="mb-1.5 flex items-center justify-between gap-2">
             <label className="text-xs font-medium text-[var(--muted)]">Tags</label>
             <CopyButton text={tagsText} label="tags" />
           </div>
-          <p className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white">
-            {tagsText}
-          </p>
+          <p className={textAreaBase}>{tagsText}</p>
         </div>
 
         <div>
-          <div className="mb-1 flex items-center justify-between gap-2">
+          <div className="mb-1.5 flex items-center justify-between gap-2">
             <label className="text-xs font-medium text-[var(--muted)]">Hashtags</label>
             <CopyButton text={hashtagsText} label="hashtags" />
           </div>
-          <p className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white">
-            {hashtagsText}
-          </p>
+          <p className={textAreaBase}>{hashtagsText}</p>
         </div>
       </div>
     </div>
