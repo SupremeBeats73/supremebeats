@@ -3,6 +3,7 @@
 import { useJobs } from "../context/JobsContext";
 import OverviewCard from "../components/OverviewCard";
 import MicTierProgress from "../components/MicTierProgress";
+import MicTierCard from "../components/MicTierCard";
 import { MOCK_MIC_TIER_PROGRESS } from "../lib/mockUserPrefs";
 import { DEFAULT_DAILY_CREDITS } from "../lib/jobConfig";
 
@@ -27,6 +28,7 @@ export default function DashboardPage() {
         <strong>Placeholder data:</strong> Project count, recent renders, followers, plays, rating average, and mic tier progress use demo values until the backend is connected. Credits are live for this session.
       </p>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <MicTierCard />
         <OverviewCard
           title="Credits remaining"
           value={creditsRemaining}
