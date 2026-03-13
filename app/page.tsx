@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import SectionWrapper from "./components/SectionWrapper";
@@ -5,6 +8,7 @@ import FeatureCard from "./components/FeatureCard";
 import CTAButton from "./components/CTAButton";
 import CreatorCard from "./components/CreatorCard";
 import TrackCard from "./components/TrackCard";
+import { supabase } from "./lib/supabaseClient";
 
 const FEATURES = [
   {
@@ -61,6 +65,23 @@ const MOCK_TRACKS = [
   { title: "Skyline", creator: "Echo Wave", plays: "9.8k", rating: 5.0, micBadge: "Mic 5", engagement: "High" },
 ];
 
+type CreatorCardData = {
+  name: string;
+  plays: string;
+  rating: number;
+  micTier: string;
+  engagement: string;
+};
+
+type TrackCardData = {
+  title: string;
+  creator: string;
+  plays: string;
+  rating: number;
+  micBadge: string;
+  engagement: string;
+};
+
 function FeatureIcon() {
   return (
     <span className="text-2xl opacity-90" aria-hidden>
@@ -70,6 +91,69 @@ function FeatureIcon() {
 }
 
 export default function Home() {
+  const [creators, setCreators] = useState<CreatorCardData[]>(MOCK_CREATORS);
+  const [tracks, setTracks] = useState<TrackCardData[]>(MOCK_TRACKS);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadFromSupabase = async () => {
+      try {
+        const [
+          { data: trackRows, error: tracksError },
+          { data: profileRows, error: profilesError },
+        ] = await Promise.all([
+          supabase
+            .from("tracks")
+            .select("id,title,creator_name,plays,rating,mic_badge,engagement")
+            .limit(3),
+          supabase
+            .from("profiles")
+            .select("id,display_name,plays,rating,mic_tier,engagement")
+            .limit(3),
+        ]);
+
+        if (!tracksError && trackRows && trackRows.length > 0 && isMounted) {
+          setTracks(
+            trackRows.map((t: any) => ({
+              title: t.title ?? "Untitled track",
+              creator: t.creator_name ?? "Unknown creator",
+              plays: String(t.plays ?? "0"),
+              rating: Number(t.rating ?? 0),
+              micBadge: t.mic_badge ?? "Mic 1",
+              engagement: t.engagement ?? "Medium",
+            })),
+          );
+        }
+
+        if (!profilesError && profileRows && profileRows.length > 0 && isMounted) {
+          setCreators(
+            profileRows.map((p: any) => ({
+              name: p.display_name ?? "Unknown creator",
+              plays: String(p.plays ?? "0"),
+              rating: Number(p.rating ?? 0),
+              micTier: p.mic_tier ?? "Mic 1",
+              engagement: p.engagement ?? "Medium",
+            })),
+          );
+        }
+      } catch (error) {
+        if (process.env.NODE_ENV === "development") {
+          console.error(
+            "[Home] Failed to load creators / tracks from Supabase",
+            error,
+          );
+        }
+      }
+    };
+
+    loadFromSupabase();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <>
       <div
@@ -130,7 +214,7 @@ export default function Home() {
             See what the community is making. Plays, ratings, mic tiers, and more.
           </p>
           <div className="mb-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {MOCK_CREATORS.map((c) => (
+            {creators.map((c) => (
               <CreatorCard
                 key={c.name}
                 name={c.name}
@@ -142,7 +226,7 @@ export default function Home() {
             ))}
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {MOCK_TRACKS.map((t) => (
+            {tracks.map((t) => (
               <TrackCard
                 key={t.title}
                 title={t.title}
