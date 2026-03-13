@@ -379,6 +379,8 @@ export default function StudioPageContent() {
               description={action.description}
               icon={action.icon}
               onGenerate={() => handleGenerate(action.kind, action.label)}
+              projectId={projectId ?? undefined}
+              kind={action.kind}
             />
           ))}
         </div>

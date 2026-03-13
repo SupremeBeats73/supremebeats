@@ -134,13 +134,15 @@ export async function insertAssetInSupabase(
 export async function updateAssetStatusInSupabase(
   assetId: string,
   status: AssetStatus,
-  errorMessage?: string | null
+  errorMessage?: string | null,
+  url?: string | null
 ): Promise<void> {
   const { error } = await supabase
     .from("project_assets")
     .update({
       status,
       ...(errorMessage !== undefined && { error_message: errorMessage }),
+      ...(url !== undefined && { url }),
     })
     .eq("id", assetId);
   if (error) throw error;

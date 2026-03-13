@@ -156,13 +156,25 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
   );
 
   const updateAssetStatus = useCallback(
-    (assetId: string, status: AssetStatus, errorMessage?: string | null) => {
+    (
+      assetId: string,
+      status: AssetStatus,
+      errorMessage?: string | null,
+      url?: string | null
+    ) => {
       setAssets((prev) =>
         prev.map((a) =>
-          a.id === assetId ? { ...a, status, errorMessage: errorMessage ?? a.errorMessage } : a
+          a.id === assetId
+            ? {
+                ...a,
+                status,
+                errorMessage: errorMessage ?? a.errorMessage,
+                url: url ?? a.url,
+              }
+            : a
         )
       );
-      updateAssetStatusInSupabase(assetId, status, errorMessage).catch((e) =>
+      updateAssetStatusInSupabase(assetId, status, errorMessage, url).catch((e) =>
         console.error("Failed to update asset status in Supabase", e)
       );
     },
@@ -186,7 +198,17 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         updateAssetStatus(asset.id, "failure", "Mock failure (no API connected)");
         throw new Error("Mock failure (no API connected)");
       }
-      updateAssetStatus(asset.id, "success");
+
+      let url: string | null = null;
+      if (kind === "thumbnail" || kind === "cover_art") {
+        url =
+          "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=1000&auto=format&fit=crop";
+      } else if (kind === "beat" || kind === "full_song") {
+        url =
+          "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
+      }
+
+      updateAssetStatus(asset.id, "success", undefined, url);
       return asset.id;
     },
     [addAsset, updateAssetStatus]
