@@ -14,10 +14,27 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.supremebeatsstudio.com";
+
 export const metadata: Metadata = {
-  title: "SupremeBeats — Create. Compete. Rise.",
-  description:
-    "The AI-powered music creator network. AI Studio, Visual Engine, YouTube growth, and more. 1500 free credits daily.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "SupremeBeats Studio",
+    template: "%s | SupremeBeats Studio",
+  },
+  description: "The ultimate studio for AI-generated beats and music production.",
+  openGraph: {
+    title: "SupremeBeats Studio",
+    description: "Create, edit, and deploy beats in seconds.",
+    url: siteUrl,
+    siteName: "SupremeBeats Studio",
+    locale: "en_US",
+    type: "website",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

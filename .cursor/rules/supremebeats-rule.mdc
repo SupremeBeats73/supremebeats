@@ -7,3 +7,5 @@ Do not delete working files unless asked.
 Keep the design cinematic, dark, premium, and modern.
 Prefer editing existing files over creating duplicate versions.
 Explain major changes before applying them.
+
+**Site URL:** When constructing any full URL that points to this app (auth callbacks, email links, share links, canonical URLs, etc.), use `process.env.NEXT_PUBLIC_SITE_URL` as the base (e.g. `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm`). Do not hardcode `https://supremebeatsstudio.com` or any `.vercel.app` URL so one env value controls the domain everywhere.
