@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import Link from "next/link";
 
+// Client-side: only NEXT_PUBLIC_* env vars are available in the browser.
 const TIERS = [
   {
     id: "starter",
@@ -13,7 +14,8 @@ const TIERS = [
     mic: null,
     features: ["5 credits daily", "Core creation tools", "Community feed"],
     price: null,
-    cta: "Current plan",
+    priceId: null as string | null,
+    buttonLabel: "Get Started",
     highlighted: false,
     borderClass: "border-white/10",
     glowClass: "",
@@ -27,7 +29,7 @@ const TIERS = [
     features: ["500 credits/month", "Silver Mic status", "Priority support"],
     price: 19,
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTH ?? "price_pro_month",
-    cta: "Subscribe",
+    buttonLabel: "Select Plan",
     highlighted: true,
     borderClass: "border-[var(--purple-glow)]/50",
     glowClass: "shadow-[0_0_32px_rgba(124,58,237,0.25)]",
@@ -41,7 +43,7 @@ const TIERS = [
     features: ["Unlimited credits", "Gold Mic status", "Marketplace access", "Early features"],
     price: 49,
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ELITE_MONTH ?? "price_elite_month",
-    cta: "Subscribe",
+    buttonLabel: "Select Plan",
     highlighted: true,
     borderClass: "border-[var(--neon-green)]/60",
     glowClass: "shadow-[0_0_32px_rgba(34,197,94,0.3)]",
@@ -58,9 +60,31 @@ export default function ShopPage() {
   const { user } = useAuth();
   const [redirecting, setRedirecting] = useState(false);
   const [redirectLabel, setRedirectLabel] = useState("");
+  const [loadingTierId, setLoadingTierId] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
-  const handleCheckout = async (priceId: string, mode: "subscription" | "payment", metadata: Record<string, string>) => {
-    if (!user?.id) return;
+  const showToast = useCallback((message: string) => {
+    setToast(message);
+    const t = setTimeout(() => setToast(null), 3000);
+    return () => clearTimeout(t);
+  }, []);
+
+  const handleCheckout = async (
+    tierId: string,
+    priceId: string | null,
+    mode: "subscription" | "payment",
+    metadata: Record<string, string>
+  ) => {
+    if (!user?.id) {
+      showToast("Sign in to continue");
+      return;
+    }
+    if (tierId === "starter" && !priceId) {
+      showToast("You're on the free plan");
+      return;
+    }
+    if (!priceId) return;
+    setLoadingTierId(tierId);
     setRedirecting(true);
     setRedirectLabel("Redirecting to Stripe…");
     try {
@@ -70,12 +94,16 @@ export default function ShopPage() {
         body: JSON.stringify({ priceId, mode, userId: user.id, metadata }),
       });
       const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else throw new Error(data.error ?? "Checkout failed");
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      throw new Error(data.error ?? "Checkout failed");
     } catch (e) {
       setRedirecting(false);
+      setLoadingTierId(null);
       console.error(e);
-      alert(e instanceof Error ? e.message : "Checkout failed");
+      showToast("Coming Soon");
     }
   };
 
@@ -94,6 +122,12 @@ export default function ShopPage() {
             style={{ boxShadow: "0 0 24px rgba(34,197,94,0.5)" }}
           />
           <p className="mt-4 text-sm font-medium text-white">{redirectLabel}</p>
+        </div>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-white/20 bg-black/90 px-6 py-3 text-sm font-medium text-white shadow-lg backdrop-blur-md">
+          {toast}
         </div>
       )}
 
@@ -123,31 +157,48 @@ export default function ShopPage() {
                 ))}
               </ul>
               <div className="mt-6">
-                {tier.price != null ? (
-                  <>
-                    <p className="text-2xl font-bold text-white">
-                      ${tier.price}
-                      <span className="text-sm font-normal text-[var(--muted)]">/mo</span>
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleCheckout(tier.priceId!, "subscription", {
-                          plan: tier.id,
-                          credits: tier.id === "professional" ? "500" : "unlimited",
-                        })
-                      }
-                      disabled={redirecting}
-                      className="mt-4 w-full rounded-xl bg-[var(--neon-green)] py-2.5 text-sm font-semibold text-black transition-all hover:bg-[var(--neon-green-dim)] hover:shadow-[0_0_20px_var(--neon-glow)] disabled:opacity-60"
-                    >
-                      {tier.cta}
-                    </button>
-                  </>
-                ) : (
-                  <p className="py-2.5 text-center text-sm text-[var(--muted)]">
-                    {tier.cta}
+                {tier.price != null && (
+                  <p className="text-2xl font-bold text-white">
+                    ${tier.price}
+                    <span className="text-sm font-normal text-[var(--muted)]">/mo</span>
                   </p>
                 )}
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleCheckout(
+                      tier.id,
+                      tier.priceId,
+                      "subscription",
+                      {
+                        plan: tier.id,
+                        credits: tier.id === "professional" ? "500" : "unlimited",
+                      }
+                    )
+                  }
+                  disabled={redirecting || (tier.priceId != null && loadingTierId !== null)}
+                  className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-all disabled:opacity-60 ${
+                    tier.id === "starter"
+                      ? "border border-white/20 bg-white/5 text-white hover:bg-white/10"
+                      : tier.id === "professional"
+                        ? "bg-[var(--purple-glow)] text-white hover:opacity-90"
+                        : "bg-[var(--neon-green)] text-black hover:bg-[var(--neon-green-dim)] hover:shadow-[0_0_20px_var(--neon-glow)]"
+                  }`}
+                  style={
+                    tier.id === "elite" && loadingTierId !== tier.id
+                      ? { animation: "subtle-pulse 2s ease-in-out infinite" }
+                      : undefined
+                  }
+                >
+                  {loadingTierId === tier.id ? (
+                    <>
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      Loading…
+                    </>
+                  ) : (
+                    tier.buttonLabel
+                  )}
+                </button>
               </div>
             </div>
           ))}
@@ -171,15 +222,22 @@ export default function ShopPage() {
                 <button
                   type="button"
                   onClick={() =>
-                    handleCheckout(t.priceId, "payment", {
+                    handleCheckout("topup", t.priceId, "payment", {
                       type: "topup",
                       credits: String(t.credits),
                     })
                   }
-                  disabled={redirecting || !user}
-                  className="mt-3 rounded-lg bg-[var(--neon-green)] px-4 py-2 text-sm font-semibold text-black hover:bg-[var(--neon-green-dim)] disabled:opacity-60"
+                  disabled={redirecting || !user || loadingTierId !== null}
+                  className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-[var(--neon-green)] px-4 py-2 text-sm font-semibold text-black hover:bg-[var(--neon-green-dim)] disabled:opacity-60"
                 >
-                  Buy
+                  {loadingTierId === "topup" ? (
+                    <>
+                      <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      Loading…
+                    </>
+                  ) : (
+                    "Buy"
+                  )}
                 </button>
               </div>
             ))}

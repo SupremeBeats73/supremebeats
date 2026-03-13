@@ -13,7 +13,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/collabs", label: "Collabs" },
   { href: "/dashboard/revenue", label: "Revenue" },
   { href: "/dashboard/profile", label: "Profile" },
-  { href: "/dashboard/billing", label: "Billing" },
+  { href: "/dashboard/shop", label: "Supreme Shop", icon: "🛒" },
   { href: "/dashboard/settings", label: "Settings" },
 ];
 
@@ -68,12 +68,17 @@ export default function DashboardShell({
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`rounded-lg px-3 py-2 text-sm transition-colors ${
+                  className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
                     isActive
                       ? "bg-[var(--purple-mid)]/40 text-[var(--neon-green)]"
                       : "text-[var(--muted)] hover:bg-white/5 hover:text-white"
                   }`}
                 >
+                  {"icon" in item && item.icon && (
+                    <span className="text-base" aria-hidden>
+                      {item.icon}
+                    </span>
+                  )}
                   {item.label}
                 </Link>
               );
