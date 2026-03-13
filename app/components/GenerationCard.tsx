@@ -122,7 +122,7 @@ export default function GenerationCard({
         </div>
         {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
 
-        {latestResultUrl && (isImage || isAudio) && (
+        {isSuccess && latestResultUrl && (isImage || isAudio) && (
           <div className="mt-4 rounded-lg border border-white/10 bg-black/40 p-3 shadow-[0_0_22px_rgba(15,23,42,0.9)] transition-colors group-hover:border-[var(--neon-green)]/40 group-hover:bg-black/60">
             {isImage && (
               <div className="overflow-hidden rounded-md border border-white/5">
@@ -172,6 +172,24 @@ export default function GenerationCard({
                 />
               </div>
             )}
+          </div>
+        )}
+        {isSuccess && latestResultUrl && (
+          <div className="mt-3 flex justify-end">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                try {
+                  window.open(latestResultUrl, "_blank");
+                } catch {
+                  // no-op
+                }
+              }}
+              className="rounded-lg border border-[var(--neon-green)]/40 bg-black/60 px-3 py-1.5 text-[11px] font-medium text-[var(--neon-green)] shadow-[0_0_16px_rgba(34,197,94,0.4)] transition-colors hover:bg-[var(--neon-green)] hover:text-black"
+            >
+              Download
+            </button>
           </div>
         )}
       </div>
