@@ -18,6 +18,7 @@ import {
   updateAssetStatusInSupabase,
   upsertYouTubePackageInSupabase,
 } from "../lib/supabaseProjects";
+import { uploadAssetToBucket } from "../lib/uploadAsset";
 import type {
   Project,
   ProjectAsset,
@@ -38,6 +39,12 @@ type ProjectsContextType = {
     kind: ProjectAssetKind,
     label: string,
     initialStatus?: AssetStatus
+  ) => Promise<ProjectAsset>;
+  uploadFile: (
+    projectId: string,
+    file: File,
+    kind: ProjectAssetKind,
+    label?: string
   ) => Promise<ProjectAsset>;
   updateAssetStatus: (
     assetId: string,
@@ -155,6 +162,47 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     [user?.id]
   );
 
+  const uploadFile = useCallback(
+    async (
+      projectId: string,
+      file: File,
+      kind: ProjectAssetKind,
+      label?: string
+    ): Promise<ProjectAsset> => {
+      if (!user?.id) {
+        throw new Error("Must be signed in to upload an asset");
+      }
+
+      const publicUrl = await uploadAssetToBucket(file, {
+        folder: `projects/${projectId}`,
+      });
+
+      const asset = await insertAssetInSupabase(
+        user.id,
+        projectId,
+        kind,
+        label ?? file.name,
+        "success"
+      );
+
+      // Ensure local state and Supabase both have the URL set.
+      setAssets((prev) =>
+        prev.map((a) =>
+          a.id === asset.id
+            ? {
+                ...a,
+                url: publicUrl,
+              }
+            : a
+        )
+      );
+      await updateAssetStatusInSupabase(asset.id, "success", undefined, publicUrl);
+
+      return { ...asset, url: publicUrl };
+    },
+    [user?.id]
+  );
+
   const updateAssetStatus = useCallback(
     (
       assetId: string,
@@ -265,6 +313,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         getProject,
         getAssets,
         addAsset,
+        uploadFile,
         updateAssetStatus,
         mockGenerate,
         getYouTubePackage,
