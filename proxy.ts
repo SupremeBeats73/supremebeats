@@ -2,13 +2,12 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 // NOTE: Current auth is handled client-side via Supabase JS (localStorage-based session).
-// This middleware is a non-breaking scaffold: it can be extended later to use a
+// This proxy is a non-breaking scaffold: it can be extended later to use a
 // cookie-based Supabase session (e.g. with @supabase/ssr) without changing routes.
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Only consider dashboard/admin-like routes.
   const isProtected =
     pathname.startsWith("/dashboard") || pathname.startsWith("/admin");
 
@@ -27,4 +26,3 @@ export function middleware(req: NextRequest) {
 export const config = {
   matcher: ["/dashboard/:path*", "/admin/:path*"],
 };
-
