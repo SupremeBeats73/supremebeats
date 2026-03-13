@@ -4,6 +4,7 @@ import { useJobs } from "../context/JobsContext";
 import OverviewCard from "../components/OverviewCard";
 import MicTierProgress from "../components/MicTierProgress";
 import MicTierCard from "../components/MicTierCard";
+import CreatorStats from "../components/CreatorStats";
 import { MOCK_MIC_TIER_PROGRESS } from "../lib/mockUserPrefs";
 import { DEFAULT_DAILY_CREDITS } from "../lib/jobConfig";
 
@@ -29,6 +30,7 @@ export default function DashboardPage() {
       </p>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <MicTierCard />
+        <CreatorStats />
         <OverviewCard
           title="Credits remaining"
           value={creditsRemaining}
