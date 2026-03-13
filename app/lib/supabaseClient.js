@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+// Remove the dotenv import for now to see if it fixes the build
 
 // Try to load env variables, otherwise use your specific project credentials
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://rpdsusbghxytanfmjofb.supabase.co';
