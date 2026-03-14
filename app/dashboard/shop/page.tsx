@@ -28,7 +28,7 @@ const TIERS = [
     mic: "Silver Mic",
     features: ["500 credits/month", "Silver Mic status", "Priority support"],
     price: 19,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTH ?? "price_pro_month",
+    priceId: process.env.NEXT_PUBLIC_PRICE_PROFESSIONAL ?? "price_pro_month",
     buttonLabel: "Select Plan",
     highlighted: true,
     borderClass: "border-[var(--purple-glow)]/50",
@@ -42,7 +42,7 @@ const TIERS = [
     mic: "Gold Mic",
     features: ["Unlimited credits", "Gold Mic status", "Marketplace access", "Early features"],
     price: 49,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ELITE_MONTH ?? "price_elite_month",
+    priceId: process.env.NEXT_PUBLIC_PRICE_ELITE_GOLD ?? "price_elite_month",
     buttonLabel: "Select Plan",
     highlighted: true,
     borderClass: "border-[var(--neon-green)]/60",
@@ -51,9 +51,9 @@ const TIERS = [
 ];
 
 const TOPUPS = [
-  { label: "100 credits", credits: 100, priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_100 ?? "price_topup_100", amount: 499 },
-  { label: "500 credits", credits: 500, priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_500 ?? "price_topup_500", amount: 1999 },
-  { label: "1,000 credits", credits: 1000, priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_1000 ?? "price_topup_1000", amount: 3499 },
+  { label: "100 credits", credits: 100, priceId: process.env.NEXT_PUBLIC_PRICE_100_COINS ?? "price_topup_100", amount: 499 },
+  { label: "500 credits", credits: 500, priceId: process.env.NEXT_PUBLIC_PRICE_500_COINS ?? "price_topup_500", amount: 1999 },
+  { label: "1,000 credits", credits: 1000, priceId: process.env.NEXT_PUBLIC_PRICE_1000_COINS ?? "price_topup_1000", amount: 3499 },
 ];
 
 export default function ShopPage() {
@@ -91,7 +91,13 @@ export default function ShopPage() {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId, mode, userId: user.id, metadata }),
+        body: JSON.stringify({
+          priceId,
+          mode,
+          userId: user.id,
+          metadata,
+          returnBaseUrl: typeof window !== "undefined" ? window.location.origin : undefined,
+        }),
       });
       const data = await res.json();
       if (res.ok && data.url) {

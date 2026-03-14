@@ -26,7 +26,13 @@ export default function CheckoutButton({
 
     setLoading(true);
     try {
-      const { url } = await createCheckoutSession(priceId, userId);
+      const returnBaseUrl =
+        typeof window !== "undefined" ? window.location.origin : undefined;
+      const { url } = await createCheckoutSession(
+        priceId,
+        userId,
+        returnBaseUrl
+      );
       if (url) window.location.href = url;
     } catch (err) {
       console.error(err);

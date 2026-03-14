@@ -6,10 +6,19 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2023-10-16" as Stripe.LatestApiVersion,
 });
 
-const baseUrl =
+const defaultBaseUrl =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.supremebeatsstudio.com";
 
-export async function createCheckoutSession(priceId: string, userId: string) {
+export async function createCheckoutSession(
+  priceId: string,
+  userId: string,
+  returnBaseUrl?: string
+) {
+  const baseUrl =
+    typeof returnBaseUrl === "string" && /^https?:\/\//.test(returnBaseUrl)
+      ? returnBaseUrl.replace(/\/$/, "")
+      : defaultBaseUrl;
+
   try {
     const isSubscription =
       priceId === process.env.NEXT_PUBLIC_PRICE_PROFESSIONAL ||

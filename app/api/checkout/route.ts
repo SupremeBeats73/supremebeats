@@ -6,15 +6,36 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.supremebeatsstu
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { priceId, userId, metadata = {} } = body as {
+    const { priceId, userId, metadata = {}, returnBaseUrl } = body as {
       priceId?: string;
       userId?: string;
       metadata?: Record<string, string>;
+      returnBaseUrl?: string;
     };
+
+    // Use the origin the user started from so they return to the same site and stay logged in
+    const origin =
+      typeof returnBaseUrl === "string" && /^https?:\/\//.test(returnBaseUrl)
+        ? returnBaseUrl.replace(/\/$/, "")
+        : request.headers.get("origin") ?? siteUrl;
 
     if (!priceId) {
       return NextResponse.json(
         { error: "Missing priceId" },
+        { status: 400 }
+      );
+    }
+
+    // Reject placeholder IDs (Stripe real IDs look like price_1ABC... with 24+ chars)
+    const isPlaceholder =
+      typeof priceId === "string" &&
+      (priceId.length < 20 || /^price_(pro_month|elite_month|topup_\d+)$/.test(priceId));
+    if (isPlaceholder) {
+      return NextResponse.json(
+        {
+          error:
+            "Price not configured. Add your Stripe price IDs to .env.local (e.g. NEXT_PUBLIC_PRICE_PROFESSIONAL, NEXT_PUBLIC_PRICE_ELITE_GOLD). Create prices in Stripe Dashboard → Products.",
+        },
         { status: 400 }
       );
     }
@@ -32,8 +53,8 @@ export async function POST(request: NextRequest) {
       mode: "subscription",
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${siteUrl}/dashboard/shop/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${siteUrl}/dashboard/shop`,
+      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/dashboard/shop`,
       ...(userId && { client_reference_id: userId }),
       metadata: userId ? { userId, ...metadata } : metadata,
     });
@@ -41,8 +62,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: session.url ?? null });
   } catch (e) {
     console.error("[checkout]", e);
+    const message = e instanceof Error ? e.message : "Checkout failed";
+    const isNoSuchPrice =
+      typeof message === "string" &&
+      (message.toLowerCase().includes("no such price") ||
+        message.toLowerCase().includes("resource_missing"));
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Checkout failed" },
+      {
+        error: isNoSuchPrice
+          ? "That price ID isn’t in your Stripe account. Check .env.local: use price IDs from Stripe Dashboard → Products (e.g. price_1ABC...)."
+          : message,
+      },
       { status: 500 }
     );
   }
