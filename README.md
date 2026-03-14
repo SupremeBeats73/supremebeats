@@ -31,7 +31,9 @@ If you see **"sent an invalid response"** or sign-in fails when using Google (or
    Set **Site URL** to your app origin (e.g. `http://localhost:3000` or `https://your-domain.com`).
 
 3. **Google provider**  
-   Under **Authentication** → **Providers** → **Google**, enable Google and add the Client ID and Client Secret from [Google Cloud Console](https://console.cloud.google.com/). In Google Cloud Console, add the **Authorized redirect URI** that Supabase shows (e.g. `https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback`).
+   Under **Authentication** → **Providers** → **Google**, enable Google and add the Client ID and Client Secret from [Google Cloud Console](https://console.cloud.google.com/apis/credentials). In Google Cloud Console, open your **OAuth 2.0 Client ID** (Web application) and:
+   - **Authorized redirect URIs**: add your **Supabase** callback URL (not your app’s), e.g. `https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback`. If you get **HTTP 400** when signing in with Google, this is usually because this exact URI is missing or wrong.
+   - **Authorized JavaScript origins**: add your app origin, e.g. `http://localhost:3000` for local dev or `https://your-domain.com` for production.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 

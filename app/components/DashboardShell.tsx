@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
+import { supabase } from "../lib/supabaseClient";
+import CreditCounter from "./CreditCounter";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Overview" },
@@ -26,6 +28,7 @@ export default function DashboardShell({
   const router = useRouter();
   const { user, loading, signOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [displayName, setDisplayName] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -34,6 +37,16 @@ export default function DashboardShell({
   useEffect(() => {
     setMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase
+      .from("profiles")
+      .select("display_name")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => setDisplayName(data?.display_name ?? null));
+  }, [user?.id]);
 
   if (loading) {
     return (
@@ -86,9 +99,10 @@ export default function DashboardShell({
               SupremeBeats
             </Link>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <CreditCounter />
             <span className="hidden text-sm text-[var(--muted)] sm:inline">
-              {user?.email}
+              {displayName ?? user?.email ?? "Account"}
             </span>
             <Link
               href="/"

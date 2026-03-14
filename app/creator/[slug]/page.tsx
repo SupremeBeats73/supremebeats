@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import MicBadge from "../../components/MicBadge";
+import UserBadge from "../../components/UserBadge";
 import { MOCK_PUBLIC_CREATORS, MOCK_FEED_TRACKS } from "../../lib/mockFeed";
 import type { PublicCreatorProfile } from "../../lib/types";
 
@@ -56,7 +57,10 @@ export default function PublicCreatorPage() {
             </div>
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <h1 className="text-xl font-bold text-white">{creator.username}</h1>
+                <h1 className="flex items-center gap-2 text-xl font-bold text-white">
+                  {creator.username}
+                  <UserBadge userId={creator.id} />
+                </h1>
                 <p className="text-sm text-[var(--muted)]">{creator.reputationSummary}</p>
               </div>
               <button

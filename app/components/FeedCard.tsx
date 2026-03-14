@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import MicBadge from "./MicBadge";
+import UserBadge from "./UserBadge";
 import { RATING_LISTENING_THRESHOLD_PLACEHOLDER } from "../lib/constants";
 import type { FeedTrack, MicTierId } from "../lib/types";
 
@@ -64,13 +65,14 @@ export default function FeedCard({
 
       <div className="p-4">
         <h3 className="font-semibold text-white">{track.title}</h3>
-        <p className="mt-1 text-sm text-[var(--muted)]">
+        <p className="mt-1 flex items-center gap-1.5 text-sm text-[var(--muted)]">
           <Link
             href={`/creator/${track.creatorSlug}`}
             className="text-[var(--neon-green)] hover:underline"
           >
             {track.creatorName}
           </Link>
+          <UserBadge userId={track.creatorId} micTier={track.micTier} />
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <MicBadge tier={track.micTier as MicTierId} size="sm" />

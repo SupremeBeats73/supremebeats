@@ -18,7 +18,7 @@ const TIER_TRACK_THRESHOLDS: Record<MicTierId, number> = {
 function normalizeMicTier(value: string | null | undefined): MicTierId {
   if (!value) return "bronze";
   const v = value.toString().toLowerCase();
-  if (v === "gold" || v.includes("gold")) return "gold";
+  if (v === "gold" || v === "elite" || v.includes("gold")) return "gold";
   if (v === "silver" || v.includes("silver")) return "silver";
   if (v === "bronze" || v.includes("bronze")) return "bronze";
   return "bronze";

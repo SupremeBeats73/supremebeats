@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import MicBadge from "./MicBadge";
+import UserBadge from "./UserBadge";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabaseClient";
 import type { DiscoveryTrack } from "../lib/discoveryFeed";
@@ -28,7 +29,7 @@ interface SupremeCardProps {
 function normalizeMicTier(v: string | null | undefined): MicTierId {
   if (!v) return "bronze";
   const s = String(v).toLowerCase();
-  if (s === "gold" || s.includes("gold")) return "gold";
+  if (s === "gold" || s === "elite" || s.includes("gold")) return "gold";
   if (s === "silver" || s.includes("silver")) return "silver";
   return "bronze";
 }
@@ -171,6 +172,7 @@ export default function SupremeCard({
         <h3 className="truncate font-semibold text-white">{track.title}</h3>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <span className="text-sm text-[var(--muted)]">{track.creatorName}</span>
+          <UserBadge userId={track.creatorId} micTier={track.micTier} />
           <MicBadge tier={track.micTier as MicTierId} size="sm" />
         </div>
 

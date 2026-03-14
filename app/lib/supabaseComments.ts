@@ -7,7 +7,7 @@ import type { MicTierId } from "./types";
 function normalizeMicTier(v: string | null | undefined): MicTierId {
   if (!v) return "bronze";
   const s = String(v).toLowerCase();
-  if (s === "gold" || s.includes("gold")) return "gold";
+  if (s === "gold" || s === "elite" || s.includes("gold")) return "gold";
   if (s === "silver" || s.includes("silver")) return "silver";
   return "bronze";
 }

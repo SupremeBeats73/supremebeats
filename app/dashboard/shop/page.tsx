@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Image from "next/image";
 import { useAuth } from "../../context/AuthContext";
 import Link from "next/link";
 
@@ -140,17 +141,50 @@ export default function ShopPage() {
       )}
 
       <div className="mx-auto max-w-5xl px-4 py-10">
-        <h1 className="mb-2 text-2xl font-bold text-white">Supreme Shop</h1>
-        <p className="mb-8 text-sm text-[var(--muted)]">
-          Credits & tier. Go Pro or go Gold.
-        </p>
+        <div className="mb-8 flex flex-col items-center gap-3">
+          <Image
+            src={`/images/logo.png${typeof process !== "undefined" && process.env.NEXT_PUBLIC_LOGO_VERSION ? `?v=${process.env.NEXT_PUBLIC_LOGO_VERSION}` : "?v=2"}`}
+            alt="SupremeBeats"
+            width={160}
+            height={48}
+            className="object-contain"
+            priority
+            unoptimized
+          />
+          <h1 className="text-2xl font-bold text-white">Supreme Shop</h1>
+          <p className="text-sm text-[var(--muted)]">
+            Credits & tier. Go Pro or go Gold.
+          </p>
+        </div>
 
         <div className="mb-12 grid gap-6 sm:grid-cols-3">
           {TIERS.map((tier) => (
             <div
               key={tier.id}
-              className={`rounded-xl border bg-black/80 p-6 backdrop-blur-sm ${tier.borderClass} ${tier.glowClass}`}
+              className={`flex flex-col rounded-xl border bg-black/80 p-6 backdrop-blur-sm ${tier.borderClass} ${tier.glowClass}`}
             >
+              {tier.id === "professional" && (
+                <div className="mb-4 flex justify-center">
+                  <Image
+                    src="/images/tier_silver.png"
+                    alt="Silver Mic"
+                    width={100}
+                    height={100}
+                    className="object-contain drop-shadow-[0_0_12px_rgba(124,58,237,0.4)]"
+                  />
+                </div>
+              )}
+              {tier.id === "elite" && (
+                <div className="mb-4 flex justify-center">
+                  <Image
+                    src="/images/tier-gold.png"
+                    alt="Gold Mic"
+                    width={100}
+                    height={100}
+                    className="object-contain drop-shadow-[0_0_16px_rgba(234,179,8,0.5)]"
+                  />
+                </div>
+              )}
               <h2 className="text-lg font-bold text-white">{tier.name}</h2>
               <p className="mt-1 text-xs uppercase tracking-wider text-[var(--muted)]">
                 {tier.subtitle}
@@ -213,11 +247,20 @@ export default function ShopPage() {
         </div>
 
         <section className="rounded-xl border border-white/10 bg-black/60 p-6 backdrop-blur-sm">
-          <h2 className="mb-4 text-lg font-bold text-white">Buy Credits</h2>
-          <p className="mb-6 text-sm text-[var(--muted)]">
-            One-time top-ups. Credits never expire.
-          </p>
-          <div className="flex flex-wrap gap-4">
+          <div className="mb-6 flex flex-col items-center">
+            <Image
+              src="/images/coin.png"
+              alt="Supreme Coin"
+              width={72}
+              height={72}
+              className="object-contain drop-shadow-[0_0_20px_rgba(34,197,94,0.35)]"
+            />
+            <h2 className="mt-3 text-lg font-bold text-white">Buy Credits</h2>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              One-time top-ups. Credits never expire.
+            </p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-4">
             {TOPUPS.map((t) => (
               <div
                 key={t.priceId}

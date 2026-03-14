@@ -1,5 +1,7 @@
 /**
  * Fetch public discovery tracks from Supabase (project_assets + profiles).
+ * JOIN: We fetch profiles (display_name, mic_tier) for every post author in one batch,
+ * so each track includes mic_tier and the UI can render UserBadge without per-user API calls.
  * Assets are treated as "public" when status is success and url is set.
  */
 import { supabase } from "./supabaseClient";
@@ -10,7 +12,7 @@ const TRACK_KINDS = ["beat", "full_song"];
 function normalizeMicTier(v: string | null | undefined): MicTierId {
   if (!v) return "bronze";
   const s = String(v).toLowerCase();
-  if (s === "gold" || s.includes("gold")) return "gold";
+  if (s === "gold" || s === "elite" || s.includes("gold")) return "gold";
   if (s === "silver" || s.includes("silver")) return "silver";
   return "bronze";
 }
@@ -21,6 +23,7 @@ export interface DiscoveryTrack {
   creatorId: string;
   creatorName: string;
   creatorSlug: string;
+  /** From profiles join — use this for UserBadge so no extra fetch per author. */
   micTier: MicTierId;
   artworkUrl: string | null;
   audioUrl: string | null;
@@ -44,6 +47,7 @@ export async function fetchPublicDiscoveryTracks(): Promise<DiscoveryTrack[]> {
   const userIds = [...new Set(assets.map((a) => a.user_id).filter(Boolean))] as string[];
   const projectIds = [...new Set(assets.map((a) => a.project_id).filter(Boolean))] as string[];
 
+  /* JOIN with profiles: one query for all post authors' display_name + mic_tier */
   const [profilesRes, projectsRes] = await Promise.all([
     userIds.length
       ? supabase.from("profiles").select("id, display_name, mic_tier").in("id", userIds)
