@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../lib/supabaseClient";
 import AuthLayout from "../components/AuthLayout";
@@ -219,6 +220,11 @@ export default function LoginPage() {
             )}
           </button>
         </div>
+        <p className="mt-6 text-center text-xs text-[var(--muted)]">
+          <Link href="/privacy" className="text-[var(--neon-green)] hover:underline">Privacy Policy</Link>
+          {" · "}
+          <Link href="/terms" className="text-[var(--neon-green)] hover:underline">Terms of Service</Link>
+        </p>
       </form>
     </AuthLayout>
   );

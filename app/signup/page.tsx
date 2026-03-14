@@ -239,6 +239,12 @@ export default function SignupPage() {
             )}
           </button>
         </div>
+        <p className="mt-6 text-center text-xs text-[var(--muted)]">
+          By signing up you agree to our{" "}
+          <Link href="/terms" className="text-[var(--neon-green)] hover:underline">Terms of Service</Link>
+          {" "}and{" "}
+          <Link href="/privacy" className="text-[var(--neon-green)] hover:underline">Privacy Policy</Link>.
+        </p>
       </form>
     </AuthLayout>
   );
