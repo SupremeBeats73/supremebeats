@@ -8,6 +8,8 @@ import FeatureCard from "./components/FeatureCard";
 import CTAButton from "./components/CTAButton";
 import CreatorCard from "./components/CreatorCard";
 import TrackCard from "./components/TrackCard";
+import PricingGrid from "./components/PricingGrid";
+import { useAuth } from "./context/AuthContext";
 import { supabase } from "./lib/supabaseClient";
 
 const FEATURES = [
@@ -91,6 +93,7 @@ function FeatureIcon() {
 }
 
 export default function Home() {
+  const { user } = useAuth();
   const [creators, setCreators] = useState<CreatorCardData[]>(MOCK_CREATORS);
   const [tracks, setTracks] = useState<TrackCardData[]>(MOCK_TRACKS);
 
@@ -204,6 +207,26 @@ export default function Home() {
             ))}
           </div>
         </SectionWrapper>
+
+        {/* Pricing */}
+        <section className="border-t border-white/5 bg-gradient-to-b from-transparent to-white/[0.02] py-24 px-4">
+          <div className="mx-auto max-w-7xl">
+            <div className="mb-16 text-center">
+              <h2 className="mb-4 text-4xl font-bold text-white md:text-5xl">
+                Level Up Your <span className="text-[var(--neon-green)]">Vibe</span>
+              </h2>
+              <p className="mx-auto max-w-2xl text-lg text-[var(--muted)]">
+                Choose a credit pack or upgrade to Elite status to unlock unlimited
+                AI generations and high-fidelity stem exports.
+              </p>
+            </div>
+            <PricingGrid userId={user?.id} />
+            <p className="mt-8 text-center text-sm text-[var(--muted)]">
+              All purchases are secure and handled by Stripe. Credits are added
+              instantly.
+            </p>
+          </div>
+        </section>
 
         {/* Mock creator & track cards */}
         <SectionWrapper className="border-t border-white/5">
