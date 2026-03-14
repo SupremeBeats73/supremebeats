@@ -94,16 +94,18 @@ export default function ShopPage() {
         body: JSON.stringify({ priceId, mode, userId: user.id, metadata }),
       });
       const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
+      if (res.ok && data.url) {
+        window.location.assign(data.url);
         return;
       }
-      throw new Error(data.error ?? "Checkout failed");
+      setRedirecting(false);
+      setLoadingTierId(null);
+      showToast(data.error ?? "Checkout failed");
     } catch (e) {
       setRedirecting(false);
       setLoadingTierId(null);
       console.error(e);
-      showToast("Coming Soon");
+      showToast(e instanceof Error ? e.message : "Checkout failed");
     }
   };
 

@@ -6,16 +6,15 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.supremebeatsstu
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { priceId, mode, userId, metadata = {} } = body as {
-      priceId: string;
-      mode: "subscription" | "payment";
-      userId: string;
+    const { priceId, userId, metadata = {} } = body as {
+      priceId?: string;
+      userId?: string;
       metadata?: Record<string, string>;
     };
 
-    if (!priceId || !mode || !userId) {
+    if (!priceId) {
       return NextResponse.json(
-        { error: "Missing priceId, mode, or userId" },
+        { error: "Missing priceId" },
         { status: 400 }
       );
     }
@@ -30,13 +29,13 @@ export async function POST(request: NextRequest) {
 
     const stripe = new Stripe(secretKey);
     const session = await stripe.checkout.sessions.create({
-      mode,
-      client_reference_id: userId,
+      mode: "subscription",
+      payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${siteUrl}/dashboard/shop/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/dashboard/shop`,
-      metadata: { userId, ...metadata },
-      subscription_data: mode === "subscription" ? {} : undefined,
+      ...(userId && { client_reference_id: userId }),
+      metadata: userId ? { userId, ...metadata } : metadata,
     });
 
     return NextResponse.json({ url: session.url ?? null });
