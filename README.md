@@ -18,6 +18,21 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+### Google / Apple / Facebook sign-in (OAuth)
+
+If you see **"sent an invalid response"** or sign-in fails when using Google (or Apple/Facebook), configure your Supabase project:
+
+1. **Redirect URL**  
+   In [Supabase Dashboard](https://supabase.com/dashboard) → your project → **Authentication** → **URL Configuration** → **Redirect URLs**, add:
+   - For local dev: `http://localhost:3000/auth/callback`
+   - For production: `https://your-domain.com/auth/callback` (match your app URL)
+
+2. **Site URL**  
+   Set **Site URL** to your app origin (e.g. `http://localhost:3000` or `https://your-domain.com`).
+
+3. **Google provider**  
+   Under **Authentication** → **Providers** → **Google**, enable Google and add the Client ID and Client Secret from [Google Cloud Console](https://console.cloud.google.com/). In Google Cloud Console, add the **Authorized redirect URI** that Supabase shows (e.g. `https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback`).
+
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More
