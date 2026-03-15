@@ -43,6 +43,7 @@ export async function POST(request: Request) {
       { error: "File must be 5MB or smaller" },
       { status: 400 }
     );
+  }
   if (!ALLOWED_MIMES.includes(file.type)) {
     return NextResponse.json(
       { error: "Only JPEG, PNG, WebP, and GIF are allowed" },

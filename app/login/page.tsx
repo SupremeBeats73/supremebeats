@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../lib/supabaseClient";
@@ -9,7 +9,7 @@ import { formatAuthError } from "../lib/authErrors";
 
 type OAuthProvider = "google" | "facebook";
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [identifier, setIdentifier] = useState("");
@@ -227,5 +227,13 @@ export default function LoginPage() {
         </p>
       </form>
     </AuthLayout>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<AuthLayout title="Log in" subtitle="Loading…"><div className="text-[var(--muted)]">Loading…</div></AuthLayout>}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

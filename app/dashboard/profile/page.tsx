@@ -29,12 +29,13 @@ export default function ProfilePage() {
       setLoading(false);
       return;
     }
-    supabase
-      .from("profiles")
-      .select("id, display_name, bio, mic_tier, updated_at, avatar_url, banner_url")
-      .eq("id", user.id)
-      .maybeSingle()
-      .then(({ data }) => {
+    void Promise.resolve(
+      supabase
+        .from("profiles")
+        .select("id, display_name, bio, mic_tier, updated_at, avatar_url, banner_url")
+        .eq("id", user.id)
+        .maybeSingle()
+    ).then(({ data }) => {
         if (data) {
           setProfile({
             id: data.id,

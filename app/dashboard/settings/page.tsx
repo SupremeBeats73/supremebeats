@@ -38,16 +38,16 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!user?.id) return;
-    supabase
-      .from("profiles")
-      .select("avatar_url, banner_url")
-      .eq("id", user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        setAvatarUrl((data?.avatar_url as string) ?? null);
-        setBannerUrl((data?.banner_url as string) ?? null);
-      })
-      .catch(() => {});
+    void Promise.resolve(
+      supabase
+        .from("profiles")
+        .select("avatar_url, banner_url")
+        .eq("id", user.id)
+        .maybeSingle()
+    ).then(({ data }) => {
+      setAvatarUrl((data?.avatar_url as string) ?? null);
+      setBannerUrl((data?.banner_url as string) ?? null);
+    }).catch(() => {});
   }, [user?.id]);
 
   const handleUsernameBlur = () => {
