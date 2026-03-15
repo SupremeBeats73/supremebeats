@@ -62,6 +62,8 @@ export interface Project {
   duration: number; // seconds
   instruments: string[];
   referenceUploads: string[]; // placeholder: stored paths/ids for future uploads
+  /** Optional description for AI generation (Suno-style prompt). */
+  prompt?: string;
   createdAt: string;
   updatedAt: string;
 }

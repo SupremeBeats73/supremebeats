@@ -22,6 +22,7 @@ export default function NewProjectPage() {
   const [mood, setMood] = useState("");
   const [duration, setDuration] = useState(180);
   const [instruments, setInstruments] = useState<string[]>([]);
+  const [prompt, setPrompt] = useState(""); // describe your track (Suno-style, for AI generation)
   const [referenceNote, setReferenceNote] = useState(""); // placeholder for uploads
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -73,6 +74,7 @@ export default function NewProjectPage() {
         mood,
         duration,
         instruments,
+        prompt: prompt.trim() || undefined,
         referenceUploads: referenceNote ? [referenceNote] : [],
       });
 
@@ -155,6 +157,22 @@ export default function NewProjectPage() {
             placeholder="My Track"
             className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-white placeholder-[var(--muted)] focus:border-[var(--neon-green)]/50 focus:outline-none focus:ring-1 focus:ring-[var(--neon-green)]/50"
           />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
+            Describe your track (optional)
+          </label>
+          <textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="e.g. Chill lofi beat with piano and vinyl crackle, 90 BPM"
+            rows={3}
+            className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-white placeholder-[var(--muted)] focus:border-[var(--neon-green)]/50 focus:outline-none focus:ring-1 focus:ring-[var(--neon-green)]/50"
+          />
+          <p className="mt-1 text-xs text-[var(--muted)]">
+            Used for AI generation when you connect an API (Suno-style). Stored with the project.
+          </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">

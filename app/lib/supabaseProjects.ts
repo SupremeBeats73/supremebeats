@@ -38,6 +38,7 @@ export async function createProjectInSupabase(
     duration: data.duration,
     instruments: data.instruments,
     reference_uploads: data.referenceUploads,
+    prompt: data.prompt ?? "",
     created_at: now,
     updated_at: now,
   };
@@ -51,7 +52,7 @@ export async function createProjectInSupabase(
   const { data: inserted, error } = await supabase
     .from("projects")
     .insert(row)
-    .select("id, user_id, name, genre, bpm, key, mood, duration, instruments, reference_uploads, created_at, updated_at")
+    .select("id, user_id, name, genre, bpm, key, mood, duration, instruments, reference_uploads, prompt, created_at, updated_at")
     .single();
   if (error) {
     console.error("[supabaseProjects] createProjectInSupabase Supabase error", {
@@ -84,6 +85,7 @@ function rowToProject(row: Record<string, unknown>): Project {
     duration: (row.duration as number) ?? 180,
     instruments: ((row.instruments as string[]) ?? []) as string[],
     referenceUploads: ((row.reference_uploads as string[]) ?? []) as string[],
+    prompt: (row.prompt as string) ?? undefined,
     createdAt: (row.created_at as string) ?? "",
     updatedAt: (row.updated_at as string) ?? "",
   };
