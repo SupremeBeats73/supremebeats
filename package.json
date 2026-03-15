@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:connection": "node test-connection.js"
+    "test:connection": "node test-connection.js",
+    "sprinkle": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-workflow.ps1"
   },
   "dependencies": {
     "@stripe/stripe-js": "^8.9.0",
