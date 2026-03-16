@@ -48,9 +48,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const coinPriceIds = [
+      process.env.NEXT_PUBLIC_PRICE_100_COINS,
+      process.env.NEXT_PUBLIC_PRICE_500_COINS,
+      process.env.NEXT_PUBLIC_PRICE_1000_COINS,
+    ].filter(Boolean) as string[];
+    const isOneTime = coinPriceIds.includes(priceId);
+    const mode: "payment" | "subscription" = isOneTime ? "payment" : "subscription";
+
     const stripe = new Stripe(secretKey);
     const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
+      mode,
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,

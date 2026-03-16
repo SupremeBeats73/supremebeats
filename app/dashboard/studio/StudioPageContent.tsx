@@ -137,7 +137,7 @@ export default function StudioPageContent() {
   const projectId = searchParams.get("project");
   const { user } = useAuth();
   const { projects, projectsLoading, getProject, mockGenerate } = useProjects();
-  const { submitJob, completeJob, failJob, creditsRemaining } = useJobs();
+  const { submitJob, completeJob, failJob, creditsRemaining, creditsLoading } = useJobs();
   const project = projectId ? getProject(projectId) : null;
   const [videoGen, setVideoGen] = useState(false);
   const [thumbGen, setThumbGen] = useState(false);
@@ -248,7 +248,7 @@ export default function StudioPageContent() {
   ) => {
     if (!user) return;
     setJobError(null);
-    const result = submitJob(user.id, projectId, jobType);
+    const result = await submitJob(user.id, projectId, jobType);
     if (!result.success) {
       setJobError(result.error ?? "Job rejected");
       return;
@@ -276,7 +276,7 @@ export default function StudioPageContent() {
     setJobError(null);
     try {
       if (user) {
-        const result = submitJob(user.id, projectId, "video");
+        const result = await submitJob(user.id, projectId, "video");
         if (!result.success) {
           setJobError(result.error ?? "Job rejected");
           return;
@@ -298,7 +298,7 @@ export default function StudioPageContent() {
     setJobError(null);
     try {
       if (user) {
-        const result = submitJob(user.id, projectId, "thumbnail");
+        const result = await submitJob(user.id, projectId, "thumbnail");
         if (!result.success) {
           setJobError(result.error ?? "Job rejected");
           return;
@@ -320,7 +320,7 @@ export default function StudioPageContent() {
     setJobError(null);
     try {
       if (user) {
-        const result = submitJob(user.id, projectId, "cover_art");
+        const result = await submitJob(user.id, projectId, "cover_art");
         if (!result.success) {
           setJobError(result.error ?? "Job rejected");
           return;
@@ -348,7 +348,9 @@ export default function StudioPageContent() {
               ? `${project.name} · ${project.genre || "—"} · ${project.bpm} BPM`
               : "Project not available"}
           </p>
-          <p className="mt-1 text-xs text-[var(--muted)]">Credits: {creditsRemaining}</p>
+          <p className="mt-1 text-xs text-[var(--muted)]">
+            Credits: {creditsLoading ? "…" : creditsRemaining >= 999999 ? "∞" : creditsRemaining}
+          </p>
         </div>
         <div className="flex gap-3">
           <Link

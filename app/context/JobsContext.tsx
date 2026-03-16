@@ -5,10 +5,16 @@ import {
   useContext,
   useState,
   useCallback,
+  useEffect,
   ReactNode,
 } from "react";
+import { useAuth } from "./AuthContext";
+import { supabase } from "../lib/supabaseClient";
 import type { Job, JobStatus, JobType } from "../lib/types";
-import { JOB_LIMITS, JOB_CREDIT_COST, DEFAULT_DAILY_CREDITS } from "../lib/jobConfig";
+import { JOB_LIMITS, JOB_CREDIT_COST } from "../lib/jobConfig";
+
+/** Display value for Elite (unlimited) users */
+const ELITE_DISPLAY_CREDITS = 999999;
 
 function generateJobId() {
   return `job_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
@@ -17,21 +23,24 @@ function generateJobId() {
 type JobsContextType = {
   jobs: Job[];
   creditsRemaining: number;
+  creditsLoading: boolean;
   automationPaused: boolean;
   setAutomationPaused: (paused: boolean) => void;
-  /** Returns { success, jobId, error }. Caller must run work then completeJob or failJob. */
+  /** Async: deducts credits in DB then returns { success, jobId, error }. Caller must run work then completeJob or failJob. */
   submitJob: (
     userId: string,
     projectId: string,
     jobType: JobType,
     options?: { triggeredByAutomation?: boolean }
-  ) => { success: boolean; jobId?: string; error?: string };
+  ) => Promise<{ success: boolean; jobId?: string; error?: string }>;
   completeJob: (jobId: string) => void;
   failJob: (jobId: string, refund?: boolean) => void;
   cancelJob: (jobId: string) => void;
   retryJob: (jobId: string) => boolean;
   getJobsForUser: (userId: string) => Job[];
   getJobs: () => Job[];
+  /** Refresh credits from profile (e.g. after purchase). */
+  refreshCredits: () => void;
   /** For admin: set credits (e.g. reset). */
   setCreditsRemaining: (n: number) => void;
 };
@@ -39,9 +48,65 @@ type JobsContextType = {
 const JobsContext = createContext<JobsContextType | null>(null);
 
 export function JobsProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [creditsRemaining, setCreditsRemaining] = useState(DEFAULT_DAILY_CREDITS);
+  const [creditsRemaining, setCreditsRemaining] = useState(0);
+  const [creditsLoading, setCreditsLoading] = useState(true);
   const [automationPaused, setAutomationPaused] = useState(false);
+
+  const fetchCredits = useCallback(async () => {
+    if (!user?.id) {
+      setCreditsRemaining(0);
+      setCreditsLoading(false);
+      return;
+    }
+    setCreditsLoading(true);
+    const { data } = await supabase
+      .from("profiles")
+      .select("credits, mic_tier")
+      .eq("id", user.id)
+      .maybeSingle();
+    const credits = typeof data?.credits === "number" ? data.credits : 0;
+    const micTier = (data?.mic_tier as string) ?? "";
+    setCreditsRemaining(
+      String(micTier).toLowerCase() === "gold" ? ELITE_DISPLAY_CREDITS : credits
+    );
+    setCreditsLoading(false);
+  }, [user?.id]);
+
+  useEffect(() => {
+    fetchCredits();
+  }, [fetchCredits]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const channel = supabase
+      .channel(`jobs-credits-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "profiles",
+          filter: `id=eq.${user.id}`,
+        },
+        (payload) => {
+          const row = payload.new as { credits?: number; mic_tier?: string } | undefined;
+          if (row && typeof row.credits === "number") {
+            const micTier = (row.mic_tier as string) ?? "";
+            setCreditsRemaining(
+              String(micTier).toLowerCase() === "gold"
+                ? ELITE_DISPLAY_CREDITS
+                : row.credits
+            );
+          }
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
 
   const activeStatuses: JobStatus[] = ["queued", "processing"];
 
@@ -61,12 +126,12 @@ export function JobsProvider({ children }: { children: ReactNode }) {
   );
 
   const submitJob = useCallback(
-    (
+    async (
       userId: string,
       projectId: string,
       jobType: JobType,
       options?: { triggeredByAutomation?: boolean }
-    ): { success: boolean; jobId?: string; error?: string } => {
+    ): Promise<{ success: boolean; jobId?: string; error?: string }> => {
       const triggeredByAutomation = options?.triggeredByAutomation ?? false;
 
       if (jobType === "automation_batch" && triggeredByAutomation) {
@@ -90,7 +155,6 @@ export function JobsProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      const duplicateKey = `${userId}:${projectId}:${jobType}`;
       const isDuplicate = jobs.some(
         (j) =>
           j.user_id === userId &&
@@ -103,8 +167,25 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       }
 
       const creditCost = JOB_CREDIT_COST[jobType];
-      if (creditsRemaining < creditCost) {
-        return { success: false, error: "Insufficient credits" };
+
+      const res = await fetch("/api/credits/deduct", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: creditCost }),
+        credentials: "include",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        return {
+          success: false,
+          error: (data.error as string) || "Could not deduct credits",
+        };
+      }
+
+      if (typeof data.newBalance === "number") {
+        setCreditsRemaining(data.newBalance);
+      } else if (data.unlimited) {
+        setCreditsRemaining(ELITE_DISPLAY_CREDITS);
       }
 
       const now = new Date().toISOString();
@@ -122,10 +203,9 @@ export function JobsProvider({ children }: { children: ReactNode }) {
         triggered_by_automation: triggeredByAutomation,
       };
       setJobs((prev) => [...prev, job]);
-      setCreditsRemaining((c) => c - creditCost);
       return { success: true, jobId };
     },
-    [jobs, creditsRemaining, automationPaused, concurrentCount]
+    [jobs, automationPaused, concurrentCount]
   );
 
   const completeJob = useCallback((jobId: string) => {
@@ -145,7 +225,19 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       const job = prev.find((j) => j.job_id === jobId);
       if (!job) return prev;
       if (refund) {
-        setCreditsRemaining((c) => c + job.credit_cost);
+        fetch("/api/credits/refund", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount: job.credit_cost }),
+          credentials: "include",
+        })
+          .then((r) => r.json())
+          .then((data) => {
+            if (data.success && typeof data.newBalance === "number") {
+              setCreditsRemaining(data.newBalance);
+            }
+          })
+          .catch(() => {});
       }
       return prev.map((j) =>
         j.job_id === jobId
@@ -161,7 +253,19 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       const job = prev.find((j) => j.job_id === jobId);
       if (!job) return prev;
       if (activeStatuses.includes(job.status)) {
-        setCreditsRemaining((c) => c + job.credit_cost);
+        fetch("/api/credits/refund", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount: job.credit_cost }),
+          credentials: "include",
+        })
+          .then((r) => r.json())
+          .then((data) => {
+            if (data.success && typeof data.newBalance === "number") {
+              setCreditsRemaining(data.newBalance);
+            }
+          })
+          .catch(() => {});
       }
       return prev.map((j) =>
         j.job_id === jobId
@@ -197,6 +301,7 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       value={{
         jobs,
         creditsRemaining,
+        creditsLoading,
         automationPaused,
         setAutomationPaused,
         submitJob,
@@ -206,6 +311,7 @@ export function JobsProvider({ children }: { children: ReactNode }) {
         retryJob,
         getJobsForUser,
         getJobs,
+        refreshCredits: fetchCredits,
         setCreditsRemaining,
       }}
     >
