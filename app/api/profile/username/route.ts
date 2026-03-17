@@ -15,11 +15,16 @@ export async function GET() {
   }
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name")
+    .select("display_name, display_name_changes_remaining")
     .eq("id", user.id)
     .maybeSingle();
+  const changesRemaining =
+    typeof profile?.display_name_changes_remaining === "number"
+      ? profile.display_name_changes_remaining
+      : 1;
   return NextResponse.json({
     username: profile?.display_name ?? null,
+    display_name_changes_remaining: changesRemaining,
   });
 }
 
@@ -52,10 +57,28 @@ export async function PATCH(request: Request) {
       { status: 400 }
     );
   }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name_changes_remaining")
+    .eq("id", user.id)
+    .maybeSingle();
+  const changesRemaining =
+    typeof profile?.display_name_changes_remaining === "number"
+      ? profile.display_name_changes_remaining
+      : 1;
+  if (changesRemaining < 1) {
+    return NextResponse.json(
+      { error: "You have already used your one username change." },
+      { status: 403 }
+    );
+  }
+
   const { error } = await supabase
     .from("profiles")
     .update({
       display_name: username,
+      display_name_changes_remaining: 0,
       updated_at: new Date().toISOString(),
     })
     .eq("id", user.id);

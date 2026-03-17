@@ -36,17 +36,18 @@ This list is based on a pass over the codebase. It separates **must-haves** (cor
 
 ---
 
-## 3. Real AI music generation (Phase 1 of your roadmap)
+## 3. Real AI music generation (Phase 1 of your roadmap) — done
 
 **Current state:**  
-- Studio “Generate” buttons call **mock** generation (no external API). No real audio is produced or stored.
+- **`POST /api/generate/music`** is implemented: loads project (prompt, genre, BPM, mood), calls **Replicate MusicGen**, downloads MP3, uploads to **Supabase Storage**, updates the **`project_asset`** with the file URL. Credits are deducted by the existing flow (submitJob → deduct API) before the request.  
+- Studio **“Generate beat”** and **“Generate full song”** call this API; other kinds (thumbnail, cover, video, etc.) still use mock.  
+- If **`REPLICATE_API_TOKEN`** is not set, the API returns 501 and the UI shows “AI generation is not configured.”
 
-**What to do:**  
-- Add an API route (e.g. **`POST /api/generate/music`**) that: loads the project (including prompt), calls your chosen provider (e.g. Replicate), downloads the audio, uploads to **Supabase Storage**, creates a **`project_asset`** with the file URL, and deducts credits (via the same backend that will become the single source of truth).  
-- Wire Studio “Generate beat” / “Generate full song” to this route instead of mock.  
-- Ensure **credits are deducted in the backend** when generation starts (or when it succeeds), and that the UI uses the real credit balance (see §1).
+**What to do (if not already):**  
+- Set **`REPLICATE_API_TOKEN`** in Vercel (and `.env.local` for local dev) so generation runs.  
+- Ensure the Supabase **assets** bucket allows uploads (e.g. authenticated users or your RLS/policies).
 
-**Result:** Users get real, playable music; credits are spent in the DB; you control quality and cost.
+**Result:** Users get real, playable music for beat/full_song; credits are spent in the DB; you control quality and cost.
 
 ---
 

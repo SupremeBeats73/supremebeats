@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     const mode: "payment" | "subscription" = isOneTime ? "payment" : "subscription";
 
     const stripe = new Stripe(secretKey);
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode,
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
@@ -65,7 +65,11 @@ export async function POST(request: NextRequest) {
       cancel_url: `${origin}/dashboard/shop`,
       ...(userId && { client_reference_id: userId }),
       metadata: userId ? { userId, ...metadata } : metadata,
-    });
+    };
+    if (mode === "subscription" && userId) {
+      sessionParams.subscription_data = { metadata: { userId } };
+    }
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     return NextResponse.json({ url: session.url ?? null });
   } catch (e) {

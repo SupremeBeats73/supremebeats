@@ -115,7 +115,7 @@ export default function SignupPage() {
             htmlFor="username"
             className="mb-1 block text-sm font-medium text-[var(--muted)]"
           >
-            Username (optional)
+            Username
           </label>
           <input
             id="username"
@@ -123,8 +123,11 @@ export default function SignupPage() {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-white placeholder-[var(--muted)] focus:border-[var(--neon-green)]/50 focus:outline-none focus:ring-1 focus:ring-[var(--neon-green)]/50"
-            placeholder="creator"
+            placeholder="my_username"
           />
+          <p className="mt-1 text-xs text-[var(--muted)]">
+            Shown on your profile and across the site. You can change it only once in account settings.
+          </p>
         </div>
         <div>
           <label

@@ -7,6 +7,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useProjects } from "../../context/ProjectsContext";
 import { useJobs } from "../../context/JobsContext";
 import GenerationCard from "../../components/GenerationCard";
+import StudioWorkspace from "../../components/StudioWorkspace";
 import VisualEngineSection from "../../components/VisualEngineSection";
 import { assetKindToJobType } from "../../lib/jobConfig";
 import type { ProjectAssetKind, VisualVideoStyle } from "../../lib/types";
@@ -29,7 +30,7 @@ const GENERATION_ACTIONS: {
   { title: "Generate YouTube Package", description: "Title, description, tags, thumbnail bundle.", icon: "📦", kind: "youtube_package", label: "YouTube package" },
 ];
 
-function StudioWorkspace({ projectId }: { projectId: string }) {
+function StudioTimelineWorkspace({ projectId }: { projectId: string }) {
   const { getAssets } = useProjects();
   const assets = getAssets(projectId);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -40,7 +41,7 @@ function StudioWorkspace({ projectId }: { projectId: string }) {
     <>
       {/* Waveform section */}
       <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-4 backdrop-blur-sm">
-        <p className="mb-3 text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
+          <p className="mb-3 text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
           Waveform
         </p>
         <div className="flex h-16 items-end justify-between gap-0.5">
@@ -60,7 +61,7 @@ function StudioWorkspace({ projectId }: { projectId: string }) {
 
       {/* Timeline / track lanes feel */}
       <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-4 backdrop-blur-sm">
-        <p className="mb-3 text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
+          <p className="mb-3 text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
           Track lanes
         </p>
         <div className="space-y-2">
@@ -136,13 +137,14 @@ export default function StudioPageContent() {
   const searchParams = useSearchParams();
   const projectId = searchParams.get("project");
   const { user } = useAuth();
-  const { projects, projectsLoading, getProject, mockGenerate } = useProjects();
+  const { projects, projectsLoading, getProject, mockGenerate, addAsset, updateAssetStatus } = useProjects();
   const { submitJob, completeJob, failJob, creditsRemaining, creditsLoading } = useJobs();
   const project = projectId ? getProject(projectId) : null;
   const [videoGen, setVideoGen] = useState(false);
   const [thumbGen, setThumbGen] = useState(false);
   const [coverGen, setCoverGen] = useState(false);
   const [jobError, setJobError] = useState<string | null>(null);
+  const realMusicEnabled = process.env.NEXT_PUBLIC_ENABLE_REAL_MUSIC_AI === "true";
 
   if (process.env.NODE_ENV === "development") {
     console.log("[Studio] projectId from query", projectId, {
@@ -264,6 +266,31 @@ export default function StudioPageContent() {
 
   const handleGenerate = async (kind: ProjectAssetKind, label: string) => {
     const jobType = assetKindToJobType(kind);
+    const shouldUseReal =
+      realMusicEnabled && (kind === "beat" || kind === "full_song");
+
+    if (shouldUseReal && jobType) {
+      await runWithJob(jobType, label, async () => {
+        const asset = await addAsset(projectId, kind, label, "processing");
+        const res = await fetch("/api/generate/music", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ projectId, kind, assetId: asset.id }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          updateAssetStatus(asset.id, "failure", data.error ?? "Generation failed");
+          if (res.status === 501) {
+            throw new Error("AI generation is not configured. Add REPLICATE_API_TOKEN to enable.");
+          }
+          throw new Error(data.error ?? "Generation failed");
+        }
+        updateAssetStatus(asset.id, "success", undefined, data.url);
+        return asset.id;
+      });
+      return;
+    }
+
     if (jobType) {
       await runWithJob(jobType, label, () => mockGenerate(projectId, kind, label));
     } else {

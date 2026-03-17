@@ -13,6 +13,7 @@ export default function SettingsPage() {
   const [dashboard, setDashboard] = useState<DashboardCustomization>(MOCK_DASHBOARD_CUSTOMIZATION);
   const [profile, setProfile] = useState<PublicProfileCustomization>(MOCK_PROFILE_CUSTOMIZATION);
   const [username, setUsername] = useState("");
+  const [usernameChangesRemaining, setUsernameChangesRemaining] = useState<number>(1);
   const [usernameLoading, setUsernameLoading] = useState(true);
   const [usernameSaving, setUsernameSaving] = useState(false);
   const [usernameError, setUsernameError] = useState<string | null>(null);
@@ -31,6 +32,11 @@ export default function SettingsPage() {
       .then((res) => res.json())
       .then((data) => {
         setUsername(data.username ?? "");
+        setUsernameChangesRemaining(
+          typeof data.display_name_changes_remaining === "number"
+            ? data.display_name_changes_remaining
+            : 1
+        );
       })
       .catch(() => setUsername(""))
       .finally(() => setUsernameLoading(false));
@@ -124,6 +130,7 @@ export default function SettingsPage() {
         return;
       }
       setUsername(data.username ?? normalized);
+      setUsernameChangesRemaining(0);
       setUsernameSuccess(true);
       setTimeout(() => setUsernameSuccess(false), 3000);
     } catch {
@@ -222,6 +229,9 @@ export default function SettingsPage() {
         <p className="mb-4 text-xs text-[var(--muted)]">
           Your username is shown publicly (e.g. on the feed and profile). No spaces — use an underscore. Special characters are allowed.
         </p>
+        <p className="mb-4 text-xs text-amber-400/90">
+          You can only change your username once.
+        </p>
         {usernameLoading ? (
           <p className="text-sm text-[var(--muted)]">Loading…</p>
         ) : (
@@ -234,9 +244,15 @@ export default function SettingsPage() {
                 onChange={(e) => setUsername(e.target.value)}
                 onBlur={handleUsernameBlur}
                 placeholder="my_username"
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-[var(--muted)] focus:border-[var(--neon-green)]/50 focus:outline-none"
+                disabled={usernameChangesRemaining < 1}
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-[var(--muted)] focus:border-[var(--neon-green)]/50 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
               />
             </label>
+            {usernameChangesRemaining < 1 && (
+              <p className="text-xs text-[var(--muted)]">
+                You have used your one username change.
+              </p>
+            )}
             {usernameError && (
               <p className="text-sm text-red-400">{usernameError}</p>
             )}
@@ -245,8 +261,8 @@ export default function SettingsPage() {
             )}
             <button
               type="submit"
-              disabled={usernameSaving}
-              className="rounded-lg bg-[var(--neon-green)] px-4 py-2 text-sm font-semibold text-black hover:bg-[var(--neon-green-dim)] disabled:opacity-50"
+              disabled={usernameSaving || usernameChangesRemaining < 1}
+              className="rounded-lg bg-[var(--neon-green)] px-4 py-2 text-sm font-semibold text-black hover:bg-[var(--neon-green-dim)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {usernameSaving ? "Saving…" : "Save username"}
             </button>

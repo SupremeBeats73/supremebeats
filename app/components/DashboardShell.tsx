@@ -120,7 +120,13 @@ export default function DashboardShell({
       .select("display_name")
       .eq("id", user.id)
       .maybeSingle()
-      .then(({ data }) => setDisplayName(data?.display_name ?? null));
+      .then(({ data, error }) => {
+        const name = (data?.display_name as string) ?? "";
+        setDisplayName(name.trim() || null);
+        if (error) {
+          console.warn("[DashboardShell] Could not load display_name:", error.message);
+        }
+      });
   }, [user?.id]);
 
   if (loading) {
@@ -177,7 +183,7 @@ export default function DashboardShell({
           <div className="flex items-center gap-3 sm:gap-4">
             <CreditCounter />
             <span className="hidden text-sm text-[var(--muted)] sm:inline">
-              {displayName ?? user?.email ?? "Account"}
+              {displayName || user.email?.split("@")[0] || "Account"}
             </span>
             <Link
               href="/"

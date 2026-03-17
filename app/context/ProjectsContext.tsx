@@ -49,7 +49,8 @@ type ProjectsContextType = {
   updateAssetStatus: (
     assetId: string,
     status: AssetStatus,
-    errorMessage?: string | null
+    errorMessage?: string | null,
+    url?: string | null
   ) => void;
   /** Mock generation: simulates delay then sets success/failure. Returns asset id. */
   mockGenerate: (
