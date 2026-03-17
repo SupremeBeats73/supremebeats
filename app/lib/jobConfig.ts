@@ -56,3 +56,6 @@ export const JOB_TIMEOUT_MS: Record<JobType, number> = {
 };
 
 export const DEFAULT_DAILY_CREDITS = 1500;
+
+/** One-time credits granted to new users (profiles.credits default). */
+export const SIGNUP_CREDITS = 50;

@@ -65,10 +65,10 @@ This list is based on a pass over the codebase. It separates **must-haves** (cor
 
 ---
 
-## 5. New users: initial credits or clear paywall
+## 5. New users: initial credits or clear paywall — done
 
-**Current state:**  
-- New users get **`profiles.credits = 0`** (default from migration).  
+**Current state:**
+- **Signup credits:** Migration `20250320000000_profiles_signup_credits_default.sql` sets `profiles.credits` default to **50**. New profile rows get 50; existing rows unchanged.
 - JobsContext shows 1500 in-memory in Studio, so they can “generate” until refresh; then it resets to 1500 again. Once credits are wired to the DB (§1), new users would have **0** and could not generate unless you give them a starting balance.
 
 **What to do:**  
@@ -80,7 +80,7 @@ This list is based on a pass over the codebase. It separates **must-haves** (cor
 
 ---
 
-## 6. Customer portal (manage subscription / invoices)
+## 6. Customer portal (manage subscription / invoices) — done
 
 **Current state:**  
 - Users can subscribe but there’s no in-app way to **cancel**, **change plan**, or **download invoices**.

@@ -155,6 +155,9 @@ export default function ShopPage() {
           <p className="text-sm text-[var(--muted)]">
             Credits & tier. Go Pro or go Gold.
           </p>
+          <p className="mt-1 text-xs text-[var(--muted)]">
+            New users get 50 free credits to start. Top up or subscribe for more.
+          </p>
         </div>
 
         <div className="mb-12 grid gap-6 sm:grid-cols-3">

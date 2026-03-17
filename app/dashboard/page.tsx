@@ -22,7 +22,7 @@ export default function DashboardPage() {
     <div className="mx-auto max-w-5xl">
       <h1 className="mb-2 text-2xl font-bold text-white">Dashboard</h1>
       <p className="mb-2 text-sm text-[var(--muted)]">
-        Your creator overview. Credits are your live balance (top up in Shop).
+        Your creator overview. Credits are your live balance (top up in Shop). New users get 50 free credits to start.
       </p>
       <p className="mb-6 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
         <strong>Placeholder data:</strong> Project count, recent renders, followers, plays, rating average, and mic tier progress use demo values until the backend is connected. Credits are your real balance from profile.

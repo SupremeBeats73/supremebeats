@@ -130,6 +130,20 @@ export async function POST(req: Request) {
     if (!result.ok) {
       return new NextResponse(result.error ?? "Profile update failed", { status: 500 });
     }
+    // Persist Stripe customer id for billing portal (cancel, change plan, invoices)
+    const customerId =
+      typeof fullSession.customer === "string"
+        ? fullSession.customer
+        : (fullSession.customer as Stripe.Customer | null)?.id;
+    if (customerId) {
+      await supabaseAdmin
+        .from("profiles")
+        .update({
+          stripe_customer_id: customerId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", userId);
+    }
     return new NextResponse(null, { status: 200 });
   }
 
