@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "../../../context/AuthContext";
 import { useProjects } from "../../../context/ProjectsContext";
+import CustomSelect from "../../../components/CustomSelect";
 
 const GENRES = ["Hip-Hop", "R&B", "Pop", "Electronic", "Trap", "Lo-Fi", "Other"];
 const MOODS = ["Chill", "Energetic", "Dark", "Uplifting", "Melancholic", "Aggressive", "Other"];
@@ -180,18 +181,16 @@ export default function NewProjectPage() {
             <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
               Genre
             </label>
-            <select
+            <CustomSelect
+              aria-label="Genre"
               value={genre}
-              onChange={(e) => setGenre(e.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-black px-4 py-2.5 text-white focus:border-[var(--neon-green)]/50 focus:outline-none"
-            >
-              <option value="">Select</option>
-              {GENRES.map((g) => (
-                <option key={g} value={g}>
-                  {g}
-                </option>
-              ))}
-            </select>
+              onChange={(next) => setGenre(next)}
+              options={[
+                { value: "", label: "Select" },
+                ...GENRES.map((g) => ({ value: g, label: g })),
+              ]}
+              className="w-full"
+            />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
@@ -213,35 +212,31 @@ export default function NewProjectPage() {
             <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
               Key
             </label>
-            <select
+            <CustomSelect
+              aria-label="Key"
               value={key}
-              onChange={(e) => setKey(e.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-black px-4 py-2.5 text-white focus:border-[var(--neon-green)]/50 focus:outline-none"
-            >
-              <option value="">Select</option>
-              {KEYS.map((k) => (
-                <option key={k} value={k}>
-                  {k}
-                </option>
-              ))}
-            </select>
+              onChange={(next) => setKey(next)}
+              options={[
+                { value: "", label: "Select" },
+                ...KEYS.map((k) => ({ value: k, label: k })),
+              ]}
+              className="w-full"
+            />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
               Mood
             </label>
-            <select
+            <CustomSelect
+              aria-label="Mood"
               value={mood}
-              onChange={(e) => setMood(e.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-black px-4 py-2.5 text-white focus:border-[var(--neon-green)]/50 focus:outline-none"
-            >
-              <option value="">Select</option>
-              {MOODS.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
+              onChange={(next) => setMood(next)}
+              options={[
+                { value: "", label: "Select" },
+                ...MOODS.map((m) => ({ value: m, label: m })),
+              ]}
+              className="w-full"
+            />
           </div>
         </div>
 

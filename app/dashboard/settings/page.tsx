@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import MicTierProgress from "../../components/MicTierProgress";
+import CustomSelect from "../../components/CustomSelect";
 import { MOCK_MIC_TIER_PROGRESS, MOCK_DASHBOARD_CUSTOMIZATION, MOCK_PROFILE_CUSTOMIZATION } from "../../lib/mockUserPrefs";
 import { normalizeUsername } from "../../lib/usernameUtils";
 import { supabase } from "../../lib/supabaseClient";
@@ -285,16 +286,19 @@ export default function SettingsPage() {
         <div className="space-y-4">
           <div>
             <label className="mb-1 block text-xs text-[var(--muted)]">Default landing tab</label>
-            <select
+            <CustomSelect
+              aria-label="Default landing tab"
               value={dashboard.defaultLandingTab}
-              onChange={(e) => setDashboard((d) => ({ ...d, defaultLandingTab: e.target.value }))}
-              className="w-full rounded-lg border border-white/10 bg-black px-3 py-2 text-sm text-white focus:border-[var(--neon-green)]/50 focus:outline-none"
-            >
-              <option value="overview">Overview</option>
-              <option value="studio">Studio</option>
-              <option value="feed">Feed</option>
-              <option value="revenue">Revenue</option>
-            </select>
+              onChange={(next) =>
+                setDashboard((d) => ({ ...d, defaultLandingTab: next as DashboardCustomization["defaultLandingTab"] }))
+              }
+              options={[
+                { value: "overview", label: "Overview" },
+                { value: "studio", label: "Studio" },
+                { value: "feed", label: "Feed" },
+                { value: "revenue", label: "Revenue" },
+              ]}
+            />
           </div>
           <label className="flex items-center gap-2">
             <input
@@ -316,27 +320,39 @@ export default function SettingsPage() {
           </label>
           <div>
             <label className="mb-1 block text-xs text-[var(--muted)]">Dark theme variant</label>
-            <select
+            <CustomSelect
+              aria-label="Dark theme variant"
               value={dashboard.darkThemeVariant}
-              onChange={(e) => setDashboard((d) => ({ ...d, darkThemeVariant: e.target.value as "default" | "warmer" | "cooler" }))}
-              className="w-full rounded-lg border border-white/10 bg-black px-3 py-2 text-sm text-white focus:border-[var(--neon-green)]/50 focus:outline-none"
-            >
-              <option value="default">Default</option>
-              <option value="warmer">Warmer</option>
-              <option value="cooler">Cooler</option>
-            </select>
+              onChange={(next) =>
+                setDashboard((d) => ({
+                  ...d,
+                  darkThemeVariant: next as DashboardCustomization["darkThemeVariant"],
+                }))
+              }
+              options={[
+                { value: "default", label: "Default" },
+                { value: "warmer", label: "Warmer" },
+                { value: "cooler", label: "Cooler" },
+              ]}
+            />
           </div>
           <div>
             <label className="mb-1 block text-xs text-[var(--muted)]">Accent color</label>
-            <select
+            <CustomSelect
+              aria-label="Dashboard accent color"
               value={dashboard.accentColor}
-              onChange={(e) => setDashboard((d) => ({ ...d, accentColor: e.target.value }))}
-              className="w-full rounded-lg border border-white/10 bg-black px-3 py-2 text-sm text-white focus:border-[var(--neon-green)]/50 focus:outline-none"
-            >
-              <option value="green">Green</option>
-              <option value="purple">Purple</option>
-              <option value="cyan">Cyan</option>
-            </select>
+              onChange={(next) =>
+                setDashboard((d) => ({
+                  ...d,
+                  accentColor: next as DashboardCustomization["accentColor"],
+                }))
+              }
+              options={[
+                { value: "green", label: "Green" },
+                { value: "purple", label: "Purple" },
+                { value: "cyan", label: "Cyan" },
+              ]}
+            />
           </div>
           <p className="text-xs text-[var(--muted)]">Pin projects and collaborators from their pages.</p>
         </div>
@@ -350,26 +366,38 @@ export default function SettingsPage() {
         <div className="space-y-4">
           <div>
             <label className="mb-1 block text-xs text-[var(--muted)]">Layout style</label>
-            <select
+            <CustomSelect
+              aria-label="Profile layout style"
               value={profile.layoutStyle}
-              onChange={(e) => setProfile((p) => ({ ...p, layoutStyle: e.target.value as "grid" | "list" }))}
-              className="w-full rounded-lg border border-white/10 bg-black px-3 py-2 text-sm text-white focus:border-[var(--neon-green)]/50 focus:outline-none"
-            >
-              <option value="grid">Grid</option>
-              <option value="list">List</option>
-            </select>
+              onChange={(next) =>
+                setProfile((p) => ({
+                  ...p,
+                  layoutStyle: next as PublicProfileCustomization["layoutStyle"],
+                }))
+              }
+              options={[
+                { value: "grid", label: "Grid" },
+                { value: "list", label: "List" },
+              ]}
+            />
           </div>
           <div>
             <label className="mb-1 block text-xs text-[var(--muted)]">Accent color</label>
-            <select
+            <CustomSelect
+              aria-label="Public profile accent color"
               value={profile.accentColor}
-              onChange={(e) => setProfile((p) => ({ ...p, accentColor: e.target.value }))}
-              className="w-full rounded-lg border border-white/10 bg-black px-3 py-2 text-sm text-white focus:border-[var(--neon-green)]/50 focus:outline-none"
-            >
-              <option value="green">Green</option>
-              <option value="purple">Purple</option>
-              <option value="cyan">Cyan</option>
-            </select>
+              onChange={(next) =>
+                setProfile((p) => ({
+                  ...p,
+                  accentColor: next as PublicProfileCustomization["accentColor"],
+                }))
+              }
+              options={[
+                { value: "green", label: "Green" },
+                { value: "purple", label: "Purple" },
+                { value: "cyan", label: "Cyan" },
+              ]}
+            />
           </div>
           <label className="flex items-center gap-2">
             <input
