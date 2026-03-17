@@ -66,6 +66,22 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Dropdowns: dark list with visible options */
+select {
+  background-color: #050505;
+  color: #f9fafb;
+}
+select option {
+  background-color: #050505;
+  color: #f9fafb;
+}
+select option:hover,
+select option:focus,
+select option:checked {
+  background-color: #1b1030;
+  color: #ffffff;
+}
+
 /* Glassmorphism panels: semi-transparent + blur(10px) + thin glowing border */
 .glass-panel {
   background: var(--glass-bg);

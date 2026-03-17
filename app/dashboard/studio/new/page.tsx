@@ -183,7 +183,7 @@ export default function NewProjectPage() {
             <select
               value={genre}
               onChange={(e) => setGenre(e.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-[#0f0a1a] px-4 py-2.5 text-white focus:border-[var(--neon-green)]/50 focus:outline-none"
+              className="w-full rounded-lg border border-white/10 bg-black px-4 py-2.5 text-white focus:border-[var(--neon-green)]/50 focus:outline-none"
             >
               <option value="">Select</option>
               {GENRES.map((g) => (
@@ -216,7 +216,7 @@ export default function NewProjectPage() {
             <select
               value={key}
               onChange={(e) => setKey(e.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-[#0f0a1a] px-4 py-2.5 text-white focus:border-[var(--neon-green)]/50 focus:outline-none"
+              className="w-full rounded-lg border border-white/10 bg-black px-4 py-2.5 text-white focus:border-[var(--neon-green)]/50 focus:outline-none"
             >
               <option value="">Select</option>
               {KEYS.map((k) => (
@@ -233,7 +233,7 @@ export default function NewProjectPage() {
             <select
               value={mood}
               onChange={(e) => setMood(e.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-[#0f0a1a] px-4 py-2.5 text-white focus:border-[var(--neon-green)]/50 focus:outline-none"
+              className="w-full rounded-lg border border-white/10 bg-black px-4 py-2.5 text-white focus:border-[var(--neon-green)]/50 focus:outline-none"
             >
               <option value="">Select</option>
               {MOODS.map((m) => (

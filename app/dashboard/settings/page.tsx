@@ -148,7 +148,10 @@ export default function SettingsPage() {
       </p>
 
       {/* Profile picture & cover art */}
-      <section className="mb-8 rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-6 backdrop-blur-sm">
+      <section
+        id="profile-picture"
+        className="mb-8 rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-6 backdrop-blur-sm"
+      >
         <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-[var(--muted)]">
           Profile picture & cover
         </h2>
@@ -285,7 +288,7 @@ export default function SettingsPage() {
             <select
               value={dashboard.defaultLandingTab}
               onChange={(e) => setDashboard((d) => ({ ...d, defaultLandingTab: e.target.value }))}
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-[var(--neon-green)]/50 focus:outline-none"
+              className="w-full rounded-lg border border-white/10 bg-black px-3 py-2 text-sm text-white focus:border-[var(--neon-green)]/50 focus:outline-none"
             >
               <option value="overview">Overview</option>
               <option value="studio">Studio</option>
@@ -316,7 +319,7 @@ export default function SettingsPage() {
             <select
               value={dashboard.darkThemeVariant}
               onChange={(e) => setDashboard((d) => ({ ...d, darkThemeVariant: e.target.value as "default" | "warmer" | "cooler" }))}
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-[var(--neon-green)]/50 focus:outline-none"
+              className="w-full rounded-lg border border-white/10 bg-black px-3 py-2 text-sm text-white focus:border-[var(--neon-green)]/50 focus:outline-none"
             >
               <option value="default">Default</option>
               <option value="warmer">Warmer</option>
@@ -328,7 +331,7 @@ export default function SettingsPage() {
             <select
               value={dashboard.accentColor}
               onChange={(e) => setDashboard((d) => ({ ...d, accentColor: e.target.value }))}
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-[var(--neon-green)]/50 focus:outline-none"
+              className="w-full rounded-lg border border-white/10 bg-black px-3 py-2 text-sm text-white focus:border-[var(--neon-green)]/50 focus:outline-none"
             >
               <option value="green">Green</option>
               <option value="purple">Purple</option>
@@ -350,7 +353,7 @@ export default function SettingsPage() {
             <select
               value={profile.layoutStyle}
               onChange={(e) => setProfile((p) => ({ ...p, layoutStyle: e.target.value as "grid" | "list" }))}
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-[var(--neon-green)]/50 focus:outline-none"
+              className="w-full rounded-lg border border-white/10 bg-black px-3 py-2 text-sm text-white focus:border-[var(--neon-green)]/50 focus:outline-none"
             >
               <option value="grid">Grid</option>
               <option value="list">List</option>
@@ -361,7 +364,7 @@ export default function SettingsPage() {
             <select
               value={profile.accentColor}
               onChange={(e) => setProfile((p) => ({ ...p, accentColor: e.target.value }))}
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-[var(--neon-green)]/50 focus:outline-none"
+              className="w-full rounded-lg border border-white/10 bg-black px-3 py-2 text-sm text-white focus:border-[var(--neon-green)]/50 focus:outline-none"
             >
               <option value="green">Green</option>
               <option value="purple">Purple</option>

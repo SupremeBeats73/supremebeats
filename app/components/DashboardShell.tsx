@@ -194,12 +194,6 @@ export default function DashboardShell({
             <span className="hidden text-sm text-[var(--muted)] sm:inline">
               {displayName || "Account"}
             </span>
-            <Link
-              href="/"
-              className="text-sm text-[var(--muted)] hover:text-white"
-            >
-              Back to home
-            </Link>
             <button
               onClick={() => signOut().then(() => router.push("/"))}
               className="text-sm text-[var(--muted)] hover:text-white"

@@ -37,9 +37,14 @@ export default function ProfilePage() {
         .maybeSingle()
     ).then(({ data }) => {
         if (data) {
+          const rawDisplayName = (data.display_name as string) ?? null;
+          const effectiveUsername =
+            (rawDisplayName && rawDisplayName.trim()) ||
+            user.email?.split("@")[0] ||
+            "creator";
           setProfile({
             id: data.id,
-            username: (data.display_name as string) ?? user.email?.split("@")[0] ?? "creator",
+            username: effectiveUsername,
             profileImageUrl: (data.avatar_url as string) ?? null,
             bannerImageUrl: (data.banner_url as string) ?? null,
             bio: (data.bio as string) ?? null,
@@ -114,17 +119,20 @@ export default function ProfilePage() {
           }}
         />
         <div className="relative border-t border-white/5 bg-[var(--card-bg)] px-6 pb-6 pt-12">
-          <div
-            className="absolute left-6 top-0 h-20 w-20 -translate-y-1/2 rounded-full border-2 border-[var(--background)] bg-[var(--purple-mid)] flex items-center justify-center text-2xl font-bold text-[var(--neon-green)]"
+          <Link
+            href="/dashboard/settings#profile-picture"
+            className="group absolute left-6 top-0 h-20 w-20 -translate-y-1/2 rounded-full border-2 border-[var(--background)] bg-[var(--purple-mid)] flex items-center justify-center text-2xl font-bold text-[var(--neon-green)] ring-transparent transition-all hover:ring-2 hover:ring-[var(--neon-green)]/60"
             style={{
               backgroundImage: profile.profileImageUrl
                 ? `url(${profile.profileImageUrl})`
                 : undefined,
               backgroundSize: "cover",
             }}
+            aria-label="Edit profile picture"
           >
             {!profile.profileImageUrl && profile.username.slice(0, 1).toUpperCase()}
-          </div>
+            <span className="pointer-events-none absolute inset-0 rounded-full bg-black/30 opacity-0 transition-opacity group-hover:opacity-100" />
+          </Link>
           <h2 className="flex items-center gap-2 text-xl font-bold text-white">
             {profile.username}
             <UserBadge userId={profile.id} userEmail={user?.email ?? null} />
