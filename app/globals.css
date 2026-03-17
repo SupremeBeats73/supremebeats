@@ -71,15 +71,18 @@ select {
   background-color: #050505;
   color: #f9fafb;
 }
+select:focus {
+  border-color: var(--purple-glow);
+  box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.4);
+}
 select option {
   background-color: #050505;
   color: #f9fafb;
 }
-select option:hover,
-select option:focus,
+/* Browsers handle option hover differently; checked state is most reliable */
 select option:checked {
-  background-color: #1b1030;
-  color: #ffffff;
+  background-color: #1b1030 !important;
+  color: #ffffff !important;
 }
 
 /* Glassmorphism panels: semi-transparent + blur(10px) + thin glowing border */
