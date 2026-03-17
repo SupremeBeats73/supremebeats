@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import SectionWrapper from "./components/SectionWrapper";
@@ -157,29 +158,84 @@ export default function Home() {
     };
   }, []);
 
+  const [quickStartValue, setQuickStartValue] = useState("");
+
   return (
     <>
       <div
         className="min-h-screen"
         style={{
           background:
-            "linear-gradient(135deg, #050508 0%, #0f0a1a 25%, #1a0f2e 50%, #0a1810 75%, #050508 100%)",
-          backgroundSize: "400% 400%",
-          animation: "gradient-shift 18s ease infinite",
+            "radial-gradient(ellipse 80% 70% at 50% 0%, #6E2CF2 0%, rgba(110, 44, 242, 0.25) 40%, transparent 70%), #050505",
         }}
       >
         <Navbar />
 
         {/* Hero */}
-        <section className="relative flex min-h-[90vh] flex-col items-center justify-center px-4 pt-24 pb-16 text-center sm:px-6">
-          <div className="mx-auto max-w-3xl">
-            <h1 className="text-4xl font-bold tracking-tight text-white drop-shadow-[0_0_40px_rgba(34,197,94,0.2)] sm:text-5xl md:text-6xl lg:text-7xl">
-              Create. Compete. Rise.
+        <section className="relative flex min-h-[90vh] flex-col items-center justify-center overflow-hidden px-4 pt-24 pb-16 text-center sm:px-6">
+          {/* Floating 3D Gold Mic */}
+          <div
+            className="hero-mic-float pointer-events-none absolute right-[8%] top-[22%] hidden md:block"
+            style={{ perspective: "800px" }}
+          >
+            <Image
+              src="/images/tier-gold.png"
+              alt=""
+              width={160}
+              height={160}
+              className="drop-shadow-[0_0_40px_rgba(234,179,8,0.4)]"
+              aria-hidden
+            />
+          </div>
+          <div
+            className="hero-mic-float pointer-events-none absolute left-[5%] top-[55%] hidden lg:block"
+            style={{ perspective: "800px", animationDelay: "-4s" }}
+          >
+            <Image
+              src="/images/tier-gold.png"
+              alt=""
+              width={120}
+              height={120}
+              className="opacity-80 drop-shadow-[0_0_30px_rgba(234,179,8,0.3)]"
+              aria-hidden
+            />
+          </div>
+
+          <div className="relative z-10 mx-auto max-w-3xl">
+            <h1
+              className="font-extrabold tracking-tight text-white drop-shadow-[0_0_40px_rgba(110,44,242,0.3)] sm:text-5xl md:text-6xl lg:text-7xl"
+              style={{ fontFamily: "var(--font-inter), system-ui, sans-serif" }}
+            >
+              The Intelligence Behind the Hits.
             </h1>
-            <p className="mt-4 text-lg text-[var(--muted)] sm:text-xl md:mt-6">
-              The AI-powered music creator network.
+            <p className="mt-4 text-lg text-white/70 sm:text-xl md:mt-6">
+              AI-powered music creation. Describe your sound, get a preview in seconds.
             </p>
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-4 sm:mt-12">
+
+            {/* Quick-Start */}
+            <div className="mx-auto mt-10 max-w-xl sm:mt-12">
+              <label htmlFor="quick-start" className="sr-only">
+                Quick-Start: describe your sound or paste a link
+              </label>
+              <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-2 backdrop-blur-sm sm:flex-row sm:items-center">
+                <input
+                  id="quick-start"
+                  type="text"
+                  placeholder="Describe your sound or paste a link..."
+                  value={quickStartValue}
+                  onChange={(e) => setQuickStartValue(e.target.value)}
+                  className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/30 px-4 py-3.5 text-white placeholder-[var(--muted)] focus:border-[var(--purple-glow)]/50 focus:outline-none focus:ring-1 focus:ring-[var(--purple-glow)]/30"
+                />
+                <button
+                  type="button"
+                  className="rounded-xl bg-[var(--neon-green)] px-6 py-3.5 text-sm font-semibold text-black transition-all hover:bg-[var(--neon-green-dim)] hover:shadow-[0_0_24px_var(--neon-glow)]"
+                >
+                  Generate Preview
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4 sm:mt-10">
               <CTAButton href="/signup">Enter SupremeBeats</CTAButton>
               <CTAButton href="/signup" variant="secondary">
                 Start Creating

@@ -224,10 +224,10 @@ export default function StudioWorkspace({
   const isBusy = isGenerating || isSplitting;
 
   return (
-    <div className="relative grid gap-6 rounded-3xl border border-white/12 bg-[#1A1A1A]/80 p-6 text-white shadow-[0_0_40px_rgba(0,0,0,0.8)] backdrop-blur-2xl md:grid-cols-[1.7fr_1fr]">
+    <div className="glass-panel glass-panel--status relative grid gap-6 rounded-3xl p-6 text-white md:grid-cols-[1.7fr_1fr]">
       {/* Overlay while generating */}
       {isBusy && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 rounded-3xl bg-[#1A1A1A]/95 backdrop-blur-md">
+        <div className="glass-panel absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 rounded-3xl">
           <p className="text-lg font-semibold text-white">
             {isGenerating ? "Generating your Supreme Beat..." : "Deconstructing Audio..."}
           </p>

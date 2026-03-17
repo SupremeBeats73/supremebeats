@@ -16,7 +16,7 @@ export default function TrackCard({
   engagement = "High",
 }: TrackCardProps) {
   return (
-    <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] overflow-hidden backdrop-blur-sm transition-all duration-300 hover:border-[var(--purple-glow)]/25 hover:shadow-[0_0_20px_rgba(124,58,237,0.08)]">
+    <div className="glass-panel glass-panel--status rounded-xl overflow-hidden transition-all duration-300 hover:shadow-[var(--glass-shadow-status)]">
       <div className="aspect-[4/3] bg-gradient-to-br from-[var(--deep-purple)] to-[var(--purple-mid)]/50 flex items-center justify-center text-4xl text-white/20">
         ♪
       </div>
@@ -26,7 +26,7 @@ export default function TrackCard({
         <div className="flex flex-wrap gap-3 text-xs text-[var(--muted)]">
           <span>{plays} plays</span>
           <span>★ {rating}</span>
-          <span className="rounded bg-[var(--purple-mid)]/60 px-1.5 py-0.5 text-[var(--neon-green)]">
+          <span className="rounded bg-[var(--purple-mid)]/60 px-1.5 py-0.5 text-[var(--purple-glow)]">
             {micBadge}
           </span>
           <span>{engagement}</span>

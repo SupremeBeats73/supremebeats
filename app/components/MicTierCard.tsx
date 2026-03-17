@@ -145,7 +145,7 @@ export default function MicTierCard() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-5 backdrop-blur-sm">
+      <div className="glass-panel glass-panel--status rounded-xl p-5">
         <div className="mb-3 h-4 w-24 animate-pulse rounded bg-white/10" />
         <div className="mb-4 h-10 w-32 animate-pulse rounded-lg bg-white/10" />
         <div className="mb-2 h-2 w-full animate-pulse rounded-full bg-white/10" />
@@ -156,7 +156,7 @@ export default function MicTierCard() {
 
   return (
     <div
-      className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-5 backdrop-blur-sm"
+      className="glass-panel glass-panel--status rounded-xl p-5"
       style={{ boxShadow: style.glow }}
     >
       <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-[var(--muted)]">

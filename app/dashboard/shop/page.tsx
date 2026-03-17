@@ -46,8 +46,8 @@ const TIERS = [
     priceId: process.env.NEXT_PUBLIC_PRICE_ELITE_GOLD ?? "price_elite_month",
     buttonLabel: "Select Plan",
     highlighted: true,
-    borderClass: "border-[var(--neon-green)]/60",
-    glowClass: "shadow-[0_0_32px_rgba(34,197,94,0.3)]",
+    borderClass: "border-[var(--purple-glow)]/50",
+    glowClass: "shadow-[0_0_32px_rgba(124,58,237,0.3)]",
   },
 ];
 
@@ -135,7 +135,7 @@ export default function ShopPage() {
       )}
 
       {toast && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-white/20 bg-black/90 px-6 py-3 text-sm font-medium text-white shadow-lg backdrop-blur-md">
+        <div className="glass-panel fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl px-6 py-3 text-sm font-medium text-white">
           {toast}
         </div>
       )}
@@ -164,7 +164,7 @@ export default function ShopPage() {
           {TIERS.map((tier) => (
             <div
               key={tier.id}
-              className={`flex flex-col rounded-xl border bg-black/80 p-6 backdrop-blur-sm ${tier.borderClass} ${tier.glowClass}`}
+              className={`glass-panel flex flex-col rounded-xl p-6 ${tier.id !== "starter" ? "glass-panel--status" : ""} ${tier.glowClass}`}
             >
               {tier.id === "professional" && (
                 <div className="mb-4 flex justify-center">
@@ -192,9 +192,11 @@ export default function ShopPage() {
               <p className="mt-1 text-xs uppercase tracking-wider text-[var(--muted)]">
                 {tier.subtitle}
               </p>
-              <p className="mt-3 text-sm text-[var(--neon-green)]">{tier.credits}</p>
+              <p className={`mt-3 text-sm ${tier.id !== "starter" ? "text-[var(--purple-glow)]" : "text-[var(--muted)]"}`}>
+                {tier.credits}
+              </p>
               {tier.mic && (
-                <p className="mt-1 text-xs text-[var(--muted)]">{tier.mic}</p>
+                <p className="mt-1 text-xs text-[var(--purple-glow)]/90">{tier.mic}</p>
               )}
               <ul className="mt-4 space-y-2 text-xs text-[var(--muted)]">
                 {tier.features.map((f) => (
@@ -249,7 +251,7 @@ export default function ShopPage() {
           ))}
         </div>
 
-        <section className="rounded-xl border border-white/10 bg-black/60 p-6 backdrop-blur-sm">
+        <section className="glass-panel rounded-xl p-6">
           <div className="mb-6 flex flex-col items-center">
             <Image
               src="/images/coin.png"

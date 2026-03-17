@@ -32,7 +32,7 @@ export default function BillingPage() {
         Manage your subscription, payment method, and invoices.
       </p>
 
-      <div className="mt-8 rounded-xl border border-white/10 bg-black/40 p-6 backdrop-blur-sm">
+      <div className="glass-panel glass-panel--status mt-8 rounded-xl p-6">
         <h2 className="text-lg font-semibold text-white">Manage subscription</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
           Cancel, change plan, or download invoices in Stripe’s secure portal.

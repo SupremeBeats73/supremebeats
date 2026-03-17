@@ -13,8 +13,8 @@ export default function OverviewCard({
 }: OverviewCardProps) {
   return (
     <div
-      className={`rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-5 backdrop-blur-sm transition-all duration-300 hover:border-[var(--purple-glow)]/25 ${
-        accent ? "border-[var(--neon-green)]/20" : ""
+      className={`glass-panel rounded-xl p-5 transition-all duration-300 hover:border-[var(--glass-border-status)] ${
+        accent ? "glass-panel--status" : ""
       }`}
     >
       <p className="text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
@@ -22,7 +22,7 @@ export default function OverviewCard({
       </p>
       <p
         className={`mt-2 text-2xl font-bold text-white ${
-          accent ? "text-[var(--neon-green)]" : ""
+          accent ? "text-[var(--purple-glow)]" : ""
         }`}
       >
         {value}

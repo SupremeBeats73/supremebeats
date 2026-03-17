@@ -48,7 +48,7 @@ export default function FeedCard({
   };
 
   return (
-    <article className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] overflow-hidden backdrop-blur-sm transition-all hover:border-[var(--purple-glow)]/25">
+    <article className="glass-panel glass-panel--status rounded-xl overflow-hidden transition-all hover:shadow-[var(--glass-shadow-status)]">
       {/* Audio preview area */}
       <div className="relative aspect-video bg-gradient-to-br from-[var(--deep-purple)] to-[var(--purple-mid)]/80 flex items-center justify-center">
         <button
@@ -68,7 +68,7 @@ export default function FeedCard({
         <p className="mt-1 flex items-center gap-1.5 text-sm text-[var(--muted)]">
           <Link
             href={`/creator/${track.creatorSlug}`}
-            className="text-[var(--neon-green)] hover:underline"
+            className="text-[var(--purple-glow)] hover:underline"
           >
             {track.creatorName}
           </Link>

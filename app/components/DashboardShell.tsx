@@ -157,8 +157,8 @@ export default function DashboardShell({
       className="min-h-screen"
       style={{ background: "var(--background)" }}
     >
-      {/* Full-width header with hamburger */}
-      <header className="fixed left-0 right-0 top-0 z-40 border-b border-white/5 bg-[var(--background)]/90 backdrop-blur-xl">
+      {/* Full-width header with hamburger — glassmorphism */}
+      <header className="glass-panel fixed left-0 right-0 top-0 z-40 border-b border-white/5">
         <div className="flex h-14 items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
             <button
@@ -214,12 +214,12 @@ export default function DashboardShell({
       {menuOpen && (
         <>
           <div
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
             aria-hidden
             onClick={() => setMenuOpen(false)}
           />
           <aside
-            className="fixed left-0 top-0 z-50 h-full w-64 border-r border-white/5 bg-[var(--card-bg)]/95 shadow-xl backdrop-blur-xl"
+            className="glass-panel glass-panel--status fixed left-0 top-0 z-50 h-full w-64 border-r shadow-xl"
             role="dialog"
             aria-label="Navigation menu"
           >
@@ -249,7 +249,7 @@ export default function DashboardShell({
                       onClick={() => setMenuOpen(false)}
                       className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
                         isActive
-                          ? "bg-[var(--purple-mid)]/40 text-[var(--neon-green)]"
+                          ? "bg-[var(--purple-mid)]/50 text-white shadow-[0_0_12px_rgba(124,58,237,0.2)]"
                           : "text-[var(--muted)] hover:bg-white/5 hover:text-white"
                       }`}
                     >
