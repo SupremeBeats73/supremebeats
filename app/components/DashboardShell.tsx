@@ -183,7 +183,7 @@ export default function DashboardShell({
           <div className="flex items-center gap-3 sm:gap-4">
             <CreditCounter />
             <span className="hidden text-sm text-[var(--muted)] sm:inline">
-              {displayName || user.email?.split("@")[0] || "Account"}
+              {displayName || "Account"}
             </span>
             <Link
               href="/"
