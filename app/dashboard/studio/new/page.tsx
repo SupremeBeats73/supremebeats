@@ -304,7 +304,7 @@ export default function NewProjectPage() {
           </label>
           <input
             type="file"
-            accept="audio/*"
+            accept="audio/*,.mp3,.wav,.ogg,.m4a,.m4b,.flac,.aac,.webm,.wma,.opus"
             onChange={(e) => {
               const file = e.target.files?.[0] ?? null;
               setReferenceFile(file);
@@ -312,7 +312,7 @@ export default function NewProjectPage() {
             className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-[var(--muted)] file:mr-3 file:rounded-md file:border-0 file:bg-[var(--purple-mid)] file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-white hover:border-[var(--neon-green)]/50 focus:border-[var(--neon-green)]/50 focus:outline-none focus:ring-1 focus:ring-[var(--neon-green)]/50"
           />
           <p className="mt-1 text-xs text-[var(--muted)]">
-            Optional reference track for the AI to vibe with. Audio only; uploaded to your private storage.
+            Optional reference track for the AI. MP3, WAV, OGG, M4A, FLAC, AAC, WebM, WMA, Opus; max 25MB.
           </p>
         </div>
 

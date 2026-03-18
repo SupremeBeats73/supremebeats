@@ -9,3 +9,5 @@ Prefer editing existing files over creating duplicate versions.
 Explain major changes before applying them.
 
 **Site URL:** When constructing any full URL that points to this app (auth callbacks, email links, share links, canonical URLs, etc.), use `process.env.NEXT_PUBLIC_SITE_URL` as the base (e.g. `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm`). Do not hardcode `https://supremebeatsstudio.com` or any `.vercel.app` URL so one env value controls the domain everywhere.
+
+**When the user says "sprinkle":** (1) Apply light polish (copy, comments, small UX tweaks) as appropriate. (2) Then **always** run the project’s sprinkle workflow: run `npm run sprinkle` (see `scripts/deploy-workflow.ps1` — build, git add -A, commit, push). If that script cannot be run in the environment, do the equivalent: `npm run build`, then `git add -A`, `git commit -m "…"`, `git push`. Do not skip the build/commit/push steps.
