@@ -17,6 +17,7 @@ interface UserBadgeProps {
 
 export default function UserBadge({ userId, micTier: micTierProp, userEmail }: UserBadgeProps) {
   const [fetchedTier, setFetchedTier] = useState<string | null>(null);
+  const [fetchedIsAdmin, setFetchedIsAdmin] = useState<boolean>(false);
 
   useEffect(() => {
     if (micTierProp !== undefined || !userId) {
@@ -27,11 +28,12 @@ export default function UserBadge({ userId, micTier: micTierProp, userEmail }: U
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("mic_tier")
+        .select("mic_tier, is_admin")
         .eq("id", userId)
         .maybeSingle();
       if (cancelled) return;
       setFetchedTier(data?.mic_tier ?? null);
+      setFetchedIsAdmin(Boolean((data as any)?.is_admin));
     })();
     return () => {
       cancelled = true;
@@ -42,7 +44,7 @@ export default function UserBadge({ userId, micTier: micTierProp, userEmail }: U
   const isGold =
     micTier === "gold" ||
     (micTier != null && String(micTier).trim().toLowerCase() === "elite") ||
-    (userEmail != null && isEliteUser(userEmail, micTier));
+    isEliteUser(userEmail ?? null, micTier, fetchedIsAdmin);
   const isSilver = !isGold && micTier === "silver";
   if (!isGold && !isSilver) return null;
   const tooltip = isGold

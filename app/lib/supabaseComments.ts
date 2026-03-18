@@ -4,7 +4,8 @@
 import { supabase } from "./supabaseClient";
 import type { MicTierId } from "./types";
 
-function normalizeMicTier(v: string | null | undefined): MicTierId {
+function normalizeMicTier(v: string | null | undefined, isAdmin?: boolean | null): MicTierId {
+  if (isAdmin) return "gold";
   if (!v) return "bronze";
   const s = String(v).toLowerCase();
   if (s === "gold" || s === "elite" || s.includes("gold")) return "gold";
@@ -43,7 +44,7 @@ export async function fetchCommentsByAssetId(assetId: string): Promise<CommentWi
   const userIds = [...new Set(rows.map((r) => r.user_id).filter(Boolean))] as string[];
   const { data: profiles } = await supabase
     .from("profiles")
-    .select("id, display_name, mic_tier")
+    .select("id, display_name, mic_tier, is_admin")
     .in("id", userIds);
 
   const byId = (profiles ?? []).reduce(
@@ -51,7 +52,7 @@ export async function fetchCommentsByAssetId(assetId: string): Promise<CommentWi
       acc[p.id] = p;
       return acc;
     },
-    {} as Record<string, { display_name: string | null; mic_tier: string | null }>
+    {} as Record<string, { display_name: string | null; mic_tier: string | null; is_admin?: boolean | null }>
   );
 
   return rows.map((r) => ({
@@ -61,7 +62,7 @@ export async function fetchCommentsByAssetId(assetId: string): Promise<CommentWi
     body: r.body,
     createdAt: r.created_at,
     displayName: byId[r.user_id]?.display_name ?? "Anonymous",
-    micTier: normalizeMicTier(byId[r.user_id]?.mic_tier),
+    micTier: normalizeMicTier(byId[r.user_id]?.mic_tier, (byId[r.user_id] as any)?.is_admin as boolean | null),
   }));
 }
 

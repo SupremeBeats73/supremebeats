@@ -8,7 +8,11 @@ import UserBadge from "../../components/UserBadge";
 import { supabase } from "../../lib/supabaseClient";
 import type { UserProfile } from "../../lib/types";
 
-function normalizeMicTier(v: string | null | undefined): "bronze" | "silver" | "gold" {
+function normalizeMicTier(
+  v: string | null | undefined,
+  isAdmin?: boolean | null
+): "bronze" | "silver" | "gold" {
+  if (isAdmin) return "gold";
   if (!v) return "bronze";
   const s = String(v).toLowerCase();
   if (s === "gold" || s === "elite") return "gold";
@@ -30,7 +34,7 @@ export default function ProfilePage() {
     void Promise.resolve(
       supabase
         .from("profiles")
-        .select("id, display_name, bio, mic_tier, updated_at, avatar_url, banner_url")
+        .select("id, display_name, bio, mic_tier, updated_at, avatar_url, banner_url, is_admin")
         .eq("id", user.id)
         .maybeSingle()
     ).then(({ data }) => {
@@ -52,7 +56,7 @@ export default function ProfilePage() {
             weightedRating: 0,
             engagementScore: 0,
             creatorLevel: 1,
-            micTier: normalizeMicTier(data.mic_tier),
+            micTier: normalizeMicTier(data.mic_tier, (data as any).is_admin as boolean | null),
             reputationSummary: "Creator",
             trustScorePlaceholder: 0,
             revenueSummaryPlaceholder: "—",

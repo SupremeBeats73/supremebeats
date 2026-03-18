@@ -19,9 +19,14 @@ function getAdminEmails(): string[] {
  */
 export function isEliteUser(
   userEmail: string | null | undefined,
-  userTier: string | null | undefined
+  userTier: string | null | undefined,
+  isAdmin?: boolean | null
 ): boolean {
+  if (isAdmin === true) return true;
   if (userTier != null && String(userTier).trim().toLowerCase() === "elite") {
+    return true;
+  }
+  if (userTier != null && String(userTier).trim().toLowerCase() === "gold") {
     return true;
   }
   if (!userEmail || typeof userEmail !== "string") return false;

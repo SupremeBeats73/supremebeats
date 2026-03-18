@@ -1,4 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
+import { isEliteUser } from "@/app/lib/admin";
 
 const ELITE_DISPLAY_CREDITS = 999999;
 
@@ -37,7 +38,7 @@ export async function getDashboardData(): Promise<DashboardData | null> {
   const [profileRes, projectsRes, jobsRes] = await Promise.all([
     supabase
       .from("profiles")
-      .select("display_name, credits, mic_tier")
+      .select("display_name, credits, mic_tier, is_admin")
       .eq("id", user.id)
       .maybeSingle(),
     supabase
@@ -56,8 +57,8 @@ export async function getDashboardData(): Promise<DashboardData | null> {
   const credits =
     typeof profileRow?.credits === "number" ? profileRow.credits : 0;
   const micTier = (profileRow?.mic_tier as string) ?? null;
-  const tierLower = micTier != null ? String(micTier).trim().toLowerCase() : "";
-  const isElite = tierLower === "gold" || tierLower === "elite";
+  const isAdmin = (profileRow?.is_admin as boolean) ?? false;
+  const isElite = isEliteUser(user.email ?? null, micTier, isAdmin);
 
   const profile: DashboardProfile = {
     displayName:

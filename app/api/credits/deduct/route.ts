@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { isEliteUser } from "@/app/lib/admin";
 
 /**
  * POST /api/credits/deduct
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
 
   const { data: profile, error: fetchError } = await supabase
     .from("profiles")
-    .select("credits, mic_tier")
+    .select("credits, mic_tier, is_admin")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -50,9 +51,10 @@ export async function POST(request: Request) {
 
   const credits = typeof profile?.credits === "number" ? profile.credits : 0;
   const micTier = (profile?.mic_tier as string) ?? "";
+  const isAdmin = (profile?.is_admin as boolean) ?? false;
 
-  // Elite (Gold Mic): do not deduct; treat as unlimited
-  if (String(micTier).toLowerCase() === "gold") {
+  // Unlimited users: do not deduct
+  if (isEliteUser(user.email ?? null, micTier, isAdmin)) {
     return NextResponse.json({
       success: true,
       newBalance: credits,

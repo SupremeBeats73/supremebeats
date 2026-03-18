@@ -12,6 +12,7 @@ import { useAuth } from "./AuthContext";
 import { supabase } from "../lib/supabaseClient";
 import type { Job, JobStatus, JobType } from "../lib/types";
 import { JOB_LIMITS, JOB_CREDIT_COST } from "../lib/jobConfig";
+import { isEliteUser } from "../lib/admin";
 
 /** Display value for Elite (unlimited) users */
 const ELITE_DISPLAY_CREDITS = 999999;
@@ -63,16 +64,19 @@ export function JobsProvider({ children }: { children: ReactNode }) {
     setCreditsLoading(true);
     const { data } = await supabase
       .from("profiles")
-      .select("credits, mic_tier")
+      .select("credits, mic_tier, is_admin")
       .eq("id", user.id)
       .maybeSingle();
     const credits = typeof data?.credits === "number" ? data.credits : 0;
     const micTier = (data?.mic_tier as string) ?? "";
+    const isAdmin = (data?.is_admin as boolean) ?? false;
     setCreditsRemaining(
-      String(micTier).toLowerCase() === "gold" ? ELITE_DISPLAY_CREDITS : credits
+      isEliteUser(user.email ?? null, micTier, isAdmin)
+        ? ELITE_DISPLAY_CREDITS
+        : credits
     );
     setCreditsLoading(false);
-  }, [user?.id]);
+  }, [user?.id, user?.email]);
 
   useEffect(() => {
     fetchCredits();
@@ -91,11 +95,12 @@ export function JobsProvider({ children }: { children: ReactNode }) {
           filter: `id=eq.${user.id}`,
         },
         (payload) => {
-          const row = payload.new as { credits?: number; mic_tier?: string } | undefined;
+          const row = payload.new as { credits?: number; mic_tier?: string; is_admin?: boolean } | undefined;
           if (row && typeof row.credits === "number") {
             const micTier = (row.mic_tier as string) ?? "";
+            const isAdmin = (row.is_admin as boolean) ?? false;
             setCreditsRemaining(
-              String(micTier).toLowerCase() === "gold"
+              isEliteUser(user?.email ?? null, micTier, isAdmin)
                 ? ELITE_DISPLAY_CREDITS
                 : row.credits
             );
@@ -106,7 +111,7 @@ export function JobsProvider({ children }: { children: ReactNode }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id]);
+  }, [user?.id, user?.email]);
 
   const activeStatuses: JobStatus[] = ["queued", "processing"];
 

@@ -9,7 +9,8 @@ import type { MicTierId } from "./types";
 
 const TRACK_KINDS = ["beat", "full_song"];
 
-function normalizeMicTier(v: string | null | undefined): MicTierId {
+function normalizeMicTier(v: string | null | undefined, isAdmin?: boolean | null): MicTierId {
+  if (isAdmin) return "gold";
   if (!v) return "bronze";
   const s = String(v).toLowerCase();
   if (s === "gold" || s === "elite" || s.includes("gold")) return "gold";
@@ -50,8 +51,8 @@ export async function fetchPublicDiscoveryTracks(): Promise<DiscoveryTrack[]> {
   /* JOIN with profiles: one query for all post authors' display_name + mic_tier */
   const [profilesRes, projectsRes] = await Promise.all([
     userIds.length
-      ? supabase.from("profiles").select("id, display_name, mic_tier").in("id", userIds)
-      : { data: [] as { id: string; display_name: string | null; mic_tier: string | null }[] },
+      ? supabase.from("profiles").select("id, display_name, mic_tier, is_admin").in("id", userIds)
+      : { data: [] as { id: string; display_name: string | null; mic_tier: string | null; is_admin?: boolean | null }[] },
     projectIds.length
       ? supabase.from("projects").select("id, name").in("id", projectIds)
       : { data: [] as { id: string; name: string }[] },
@@ -62,7 +63,7 @@ export async function fetchPublicDiscoveryTracks(): Promise<DiscoveryTrack[]> {
       acc[p.id] = p;
       return acc;
     },
-    {} as Record<string, { display_name: string | null; mic_tier: string | null }>
+    {} as Record<string, { display_name: string | null; mic_tier: string | null; is_admin?: boolean | null }>
   );
   const projectsByKey = (projectsRes.data ?? []).reduce(
     (acc, p) => {
@@ -86,7 +87,7 @@ export async function fetchPublicDiscoveryTracks(): Promise<DiscoveryTrack[]> {
       creatorId: a.user_id,
       creatorName,
       creatorSlug,
-      micTier: normalizeMicTier(profile?.mic_tier),
+      micTier: normalizeMicTier(profile?.mic_tier, (profile as any)?.is_admin as boolean | null),
       artworkUrl: null,
       audioUrl: a.url,
       plays: 0,

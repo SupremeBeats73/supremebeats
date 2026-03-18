@@ -4,7 +4,11 @@ import MicBadge from "@/app/components/MicBadge";
 import { createClient } from "@/utils/supabase/server";
 import { normalizeUsername } from "@/app/lib/usernameUtils";
 
-function normalizeMicTier(v: string | null | undefined): "bronze" | "silver" | "gold" {
+function normalizeMicTier(
+  v: string | null | undefined,
+  isAdmin?: boolean | null
+): "bronze" | "silver" | "gold" {
+  if (isAdmin) return "gold";
   if (!v) return "bronze";
   const s = String(v).toLowerCase();
   if (s === "gold" || s === "elite") return "gold";
@@ -58,7 +62,7 @@ export default async function PublicCreatorPage({
 
   const { data: byCustomSlug } = await supabase
     .from("profiles")
-    .select("id, display_name, bio, mic_tier, updated_at, avatar_url, banner_url, profile_prefs")
+    .select("id, display_name, bio, mic_tier, updated_at, avatar_url, banner_url, profile_prefs, is_admin")
     .eq("profile_prefs->>customSlug", slugTrimmed)
     .limit(1)
     .maybeSingle();
@@ -67,7 +71,7 @@ export default async function PublicCreatorPage({
     ? { data: null as any }
     : await supabase
         .from("profiles")
-        .select("id, display_name, bio, mic_tier, updated_at, avatar_url, banner_url, profile_prefs")
+        .select("id, display_name, bio, mic_tier, updated_at, avatar_url, banner_url, profile_prefs, is_admin")
         .ilike("display_name", slugCandidate)
         .limit(1)
         .maybeSingle();
@@ -76,7 +80,7 @@ export default async function PublicCreatorPage({
   if (!row?.id) notFound();
 
   const username = (row.display_name as string) || slugCandidate || "creator";
-  const micTier = normalizeMicTier(row.mic_tier as string | null);
+  const micTier = normalizeMicTier(row.mic_tier as string | null, (row as any).is_admin as boolean | null);
   const profileImageUrl = await maybeRefreshSignedUrl((row.avatar_url as string) ?? null);
   const bannerImageUrl = await maybeRefreshSignedUrl((row.banner_url as string) ?? null);
   const joinDate = row.updated_at
