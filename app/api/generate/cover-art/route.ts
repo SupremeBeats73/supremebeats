@@ -158,7 +158,9 @@ export async function POST(request: Request) {
     const output = await replicate.run("black-forest-labs/flux-schnell", {
       input: { prompt },
     });
-    imageUrl = Array.isArray(output) ? (output[0] as string) : (output as string);
+    const raw =
+      Array.isArray(output) ? output[0] : typeof output === "string" ? output : null;
+    imageUrl = raw != null && typeof raw === "string" ? raw : "";
   } catch (e) {
     console.error("[generate/cover-art] Replicate error", e);
     await supabase

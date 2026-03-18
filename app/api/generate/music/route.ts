@@ -111,9 +111,8 @@ export async function POST(request: Request) {
   };
 
   if (hasJob) {
-    await supabase
-      .from("generation_jobs")
-      .insert({
+    await supabase.from("generation_jobs").upsert(
+      {
         id: jobId,
         user_id: user.id,
         project_id: projectId,
@@ -127,9 +126,9 @@ export async function POST(request: Request) {
         },
         created_at: nowIso,
         updated_at: nowIso,
-      })
-      .onConflict("id")
-      .ignore();
+      },
+      { onConflict: "id", ignoreDuplicates: true }
+    );
   }
 
   const updateAssetFailure = async (errorMessage: string) => {

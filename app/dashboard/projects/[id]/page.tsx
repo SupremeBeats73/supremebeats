@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import type { ProjectAssetKind } from "../../../lib/types";
-import VersionExportButton from "./VersionExportButton";
+import VersionExportButton from "../VersionExportButton";
 import GenerateCoverArtSection from "./GenerateCoverArtSection";
 
 type DbProject = {
