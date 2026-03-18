@@ -42,6 +42,9 @@ export default function SettingsPage() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [bannerUploading, setBannerUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [prefsSaving, setPrefsSaving] = useState(false);
+  const [prefsError, setPrefsError] = useState<string | null>(null);
+  const [prefsSuccess, setPrefsSuccess] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
@@ -66,14 +69,47 @@ export default function SettingsPage() {
     void Promise.resolve(
       supabase
         .from("profiles")
-        .select("avatar_url, banner_url")
+        .select("avatar_url, banner_url, dashboard_prefs, profile_prefs")
         .eq("id", user.id)
         .maybeSingle()
     ).then(({ data }) => {
       setAvatarUrl((data?.avatar_url as string) ?? null);
       setBannerUrl((data?.banner_url as string) ?? null);
+      const dashboardPrefs = (data as any)?.dashboard_prefs ?? null;
+      const profilePrefs = (data as any)?.profile_prefs ?? null;
+      if (dashboardPrefs && typeof dashboardPrefs === "object") {
+        setDashboard((prev) => ({ ...prev, ...(dashboardPrefs as Partial<DashboardCustomization>) }));
+      }
+      if (profilePrefs && typeof profilePrefs === "object") {
+        setProfile((prev) => ({ ...prev, ...(profilePrefs as Partial<PublicProfileCustomization>) }));
+      }
     }).catch(() => {});
   }, [user?.id]);
+
+  const handleSavePreferences = async () => {
+    if (!user?.id || prefsSaving) return;
+    setPrefsError(null);
+    setPrefsSuccess(false);
+    setPrefsSaving(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          dashboard_prefs: dashboard as any,
+          profile_prefs: profile as any,
+          updated_at: new Date().toISOString(),
+        } as any)
+        .eq("id", user.id);
+      if (error) {
+        setPrefsError(error.message || "Could not save settings");
+        return;
+      }
+      setPrefsSuccess(true);
+      setTimeout(() => setPrefsSuccess(false), 2500);
+    } finally {
+      setPrefsSaving(false);
+    }
+  };
 
   const handleUsernameBlur = () => {
     setUsername((prev) => normalizeUsername(prev));
@@ -452,6 +488,26 @@ export default function SettingsPage() {
           )}
         </div>
       </section>
+
+      {/* Save bar */}
+      <div className="mt-8 flex flex-col items-start justify-between gap-3 rounded-xl border border-white/10 bg-white/5 p-5 sm:flex-row sm:items-center">
+        <div className="text-sm">
+          <p className="text-white">Save settings</p>
+          <p className="text-xs text-[var(--muted)]">
+            Applies dashboard and public profile customization.
+          </p>
+          {prefsError && <p className="mt-2 text-sm text-red-400">{prefsError}</p>}
+          {prefsSuccess && <p className="mt-2 text-sm text-[var(--neon-green)]">Saved.</p>}
+        </div>
+        <button
+          type="button"
+          onClick={handleSavePreferences}
+          disabled={prefsSaving || !user?.id}
+          className="rounded-lg bg-[var(--neon-green)] px-5 py-2 text-sm font-semibold text-black hover:bg-[var(--neon-green-dim)] disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {prefsSaving ? "Saving…" : "Save changes"}
+        </button>
+      </div>
     </div>
   );
 }
