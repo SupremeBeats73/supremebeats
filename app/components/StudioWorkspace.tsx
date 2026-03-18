@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { useProjects } from "../context/ProjectsContext";
+import { useJobs } from "../context/JobsContext";
+import { assetKindToJobType } from "../lib/jobConfig";
 
 type TransportState = "stopped" | "playing" | "paused";
 
@@ -29,6 +33,9 @@ export default function StudioWorkspace({
   const [genre, setGenre] = useState("Trap");
   const [chords, setChords] = useState("C G Am F");
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+  const { addAsset, updateAssetStatus } = useProjects();
+  const { submitJob, completeJob, failJob, creditsRemaining, creditsLoading } = useJobs();
 
   // Lazy-load wavesurfer.js on the client only.
   useEffect(() => {
@@ -122,6 +129,15 @@ export default function StudioWorkspace({
 
   const handleGenerate = async () => {
     if (isGenerating) return;
+    if (!projectId) {
+      setError("Select or create a project to generate music.");
+      return;
+    }
+    if (!user?.id) {
+      setError("You must be signed in to generate music.");
+      return;
+    }
+
     setIsGenerating(true);
     setError(null);
     setProgress(0);
@@ -129,29 +145,64 @@ export default function StudioWorkspace({
     const clear = fakeProgress();
 
     try {
-      const res = await fetch("/api/generate", {
+      const jobType = assetKindToJobType("beat");
+      if (!jobType) {
+        setError("Generation type is not configured.");
+        return;
+      }
+
+      const jobResult = await submitJob(user.id, projectId, jobType);
+      if (!jobResult.success || !jobResult.jobId) {
+        setError(jobResult.error ?? "Job rejected");
+        return;
+      }
+
+      const jobId = jobResult.jobId;
+      const label = `${genre} beat in ${key}`.trim() || "Beat";
+      const asset = await addAsset(projectId, "beat", label, "processing");
+
+      const res = await fetch("/api/generate/music", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: `${genre} beat in ${key}`,
-          bpm: Number(bpm),
-          chords,
-          duration: 30,
           projectId,
+          kind: "beat",
+          assetId: asset.id,
+          jobId,
+          jobType,
         }),
       });
       const data = await res.json().catch(() => ({}));
       clear();
       setProgress(100);
+
       if (!res.ok || !data.url) {
-        setError(data.error ?? "Generation failed");
+        updateAssetStatus(
+          asset.id,
+          "failure",
+          (data.error as string) ?? "Generation failed"
+        );
+        if (res.status === 501) {
+          setError(
+            "AI generation is not configured. Add REPLICATE_API_TOKEN to enable."
+          );
+        } else {
+          setError((data.error as string) ?? "Generation failed");
+        }
+        failJob(jobId, true);
         return;
       }
-      wavesurferRefs.current.forEach((ws) => ws.load(data.url));
-      onGenerated?.({ url: data.url });
+
+      updateAssetStatus(asset.id, "success", undefined, data.url as string);
+      completeJob(jobId);
+
+      const url = data.url as string;
+      wavesurferRefs.current.forEach((ws) => ws.load(url));
+      onGenerated?.({ url, jobId });
     } catch (e) {
       clear();
-      setError(e instanceof Error ? e.message : "Generation failed");
+      const message = e instanceof Error ? e.message : "Generation failed";
+      setError(message);
     } finally {
       setTimeout(() => {
         setIsGenerating(false);
@@ -298,7 +349,7 @@ export default function StudioWorkspace({
         <div>
           <h2 className="mb-1 text-sm font-semibold text-white">Generation Sidebar</h2>
           <p className="mb-4 text-xs text-white/60">
-            Set the vibe, then let SupremeBeats craft a new idea. This is placeholder UI; wire it to your own API.
+            Set the vibe, then let SupremeBeats craft a new idea. Uses credits and saves to your project.
           </p>
 
           <div className="space-y-3">
@@ -372,11 +423,16 @@ export default function StudioWorkspace({
           <button
             type="button"
             onClick={handleGenerate}
-            disabled={isGenerating}
+            disabled={isGenerating || (creditsLoading ? false : creditsRemaining < 1)}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#6E2CF2] px-4 py-2 text-sm font-semibold text-white shadow-[0_0_24px_rgba(110,44,242,0.9)] transition hover:bg-[#8242ff] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isGenerating ? "Generating…" : "Generate"}
           </button>
+          {!creditsLoading && creditsRemaining < 999999 && (
+            <p className="text-[10px] text-white/50">
+              {creditsRemaining} credit{creditsRemaining === 1 ? "" : "s"} left
+            </p>
+          )}
         </div>
       </aside>
     </div>

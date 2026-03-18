@@ -21,9 +21,12 @@ type ProjectRow = {
 /**
  * POST /api/generate/music
  * Body: { projectId: string, kind: "beat" | "full_song", assetId: string }
+ * - Validates auth and project ownership.
+ * - Assumes credits were already checked + deducted by the caller (submitJob → /api/credits/deduct).
+ * - Writes a generation_jobs row (queued → running → success/failed) when jobId is provided.
  * - Loads project (prompt, genre, bpm, mood), calls Replicate MusicGen,
- *   downloads audio, uploads to Supabase Storage, updates project_asset.
- * - Credits are assumed already deducted by caller (submitJob).
+ *   downloads audio, uploads to Supabase Storage, updates project_asset,
+ *   and creates a project_versions row pointing at the stored audio.
  * - If REPLICATE_API_TOKEN is not set, returns 501.
  */
 export async function POST(request: Request) {
@@ -46,7 +49,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { projectId?: string; kind?: string; assetId?: string };
+  let body: { projectId?: string; kind?: string; assetId?: string; jobId?: string; jobType?: string };
   try {
     body = await request.json();
   } catch {
@@ -59,6 +62,8 @@ export async function POST(request: Request) {
   const projectId = typeof body?.projectId === "string" ? body.projectId.trim() : "";
   const kind = body?.kind === "beat" || body?.kind === "full_song" ? body.kind : null;
   const assetId = typeof body?.assetId === "string" ? body.assetId.trim() : "";
+  const jobId = typeof body?.jobId === "string" ? body.jobId.trim() : "";
+  const jobType = typeof body?.jobType === "string" ? body.jobType.trim() : "";
 
   if (!projectId || !kind || !assetId) {
     return NextResponse.json(
@@ -87,13 +92,59 @@ export async function POST(request: Request) {
     .join(". ") || "Instrumental music";
   const durationSec = kind === "beat" ? 20 : Math.min(30, Math.max(8, row.duration || 30));
 
+  const nowIso = new Date().toISOString();
+
+  const hasJob = !!jobId && !!jobType;
+
+  const updateJob = async (fields: Partial<{
+    status: string;
+    error_message: string | null;
+    provider_job_id: string | null;
+    output_json: unknown;
+  }>) => {
+    if (!hasJob) return;
+    await supabase
+      .from("generation_jobs")
+      .update({ ...fields, updated_at: new Date().toISOString() })
+      .eq("id", jobId)
+      .eq("user_id", user.id);
+  };
+
+  if (hasJob) {
+    await supabase
+      .from("generation_jobs")
+      .insert({
+        id: jobId,
+        user_id: user.id,
+        project_id: projectId,
+        job_type: jobType,
+        provider: "replicate",
+        status: "queued",
+        input_json: {
+          kind,
+          prompt,
+          duration: durationSec,
+        },
+        created_at: nowIso,
+        updated_at: nowIso,
+      })
+      .onConflict("id")
+      .ignore();
+  }
+
   const updateAssetFailure = async (errorMessage: string) => {
     await supabase
       .from("project_assets")
       .update({ status: "failure", error_message: errorMessage })
       .eq("id", assetId)
       .eq("user_id", user.id);
+    await updateJob({ status: "failed", error_message: errorMessage });
   };
+
+  // Move job to running right before calling the provider.
+  if (hasJob) {
+    await updateJob({ status: "running" });
+  }
 
   let predictionId: string;
   let pollUrl: string;
@@ -133,6 +184,9 @@ export async function POST(request: Request) {
         { success: false, error: "Invalid Replicate response" },
         { status: 502 }
       );
+    }
+    if (hasJob && predictionId) {
+      await updateJob({ provider_job_id: predictionId });
     }
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Replicate request failed";
@@ -198,11 +252,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const folder = "generated";
-  const filePath = `${folder}/${user.id}/${projectId}/${Date.now()}-${kind}.mp3`;
+  const filePath = `${user.id}/${projectId}/${Date.now()}-${kind}.mp3`;
 
   const { error: uploadError } = await supabase.storage
-    .from("assets")
+    .from("generated-audio")
     .upload(filePath, audioBuffer, {
       cacheControl: "3600",
       upsert: false,
@@ -217,8 +270,17 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: urlData } = supabase.storage.from("assets").getPublicUrl(filePath);
-  const publicUrl = urlData?.publicUrl ?? "";
+  const { data: urlData, error: signedError } = await supabase.storage
+    .from("generated-audio")
+    .createSignedUrl(filePath, 3600);
+  if (signedError || !urlData?.signedUrl) {
+    await updateAssetFailure("Failed to create signed URL");
+    return NextResponse.json(
+      { success: false, error: "Failed to create signed URL" },
+      { status: 500 }
+    );
+  }
+  const publicUrl = urlData.signedUrl;
 
   const { error: updateError } = await supabase
     .from("project_assets")
@@ -227,11 +289,43 @@ export async function POST(request: Request) {
     .eq("user_id", user.id);
 
   if (updateError) {
+    await updateJob({
+      status: "failed",
+      error_message: "Failed to update asset after generation",
+    });
     return NextResponse.json(
       { success: false, error: "Failed to update asset" },
       { status: 500 }
     );
   }
+
+  // Best-effort: record this generation as a project_version for export workflows.
+  try {
+    await supabase.from("project_versions").insert({
+      project_id: projectId,
+      user_id: user.id,
+      label:
+        (row.name
+          ? `${row.name} – ${kind === "beat" ? "Beat" : "Full song"}`
+          : kind === "beat"
+            ? "Beat"
+            : "Full song") || null,
+      status: "success",
+      // Prefer storing the storage path; export endpoint will re-sign it.
+      file_path: filePath,
+      audio_url: null,
+      asset_type: "generated",
+    } as any);
+  } catch (e) {
+    // Non-fatal; log on server but don't fail the request.
+    console.error("[generate/music] project_versions insert", e);
+  }
+
+  await updateJob({
+    status: "success",
+    error_message: null,
+    output_json: { url: publicUrl, assetId },
+  });
 
   return NextResponse.json({
     success: true,

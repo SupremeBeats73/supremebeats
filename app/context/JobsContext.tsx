@@ -167,11 +167,16 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       }
 
       const creditCost = JOB_CREDIT_COST[jobType];
+      const jobId = generateJobId();
 
       const res = await fetch("/api/credits/deduct", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: creditCost }),
+        body: JSON.stringify({
+          amount: creditCost,
+          reason: "job_deduct",
+          jobId,
+        }),
         credentials: "include",
       });
       const data = await res.json().catch(() => ({}));
@@ -189,7 +194,6 @@ export function JobsProvider({ children }: { children: ReactNode }) {
       }
 
       const now = new Date().toISOString();
-      const jobId = generateJobId();
       const job: Job = {
         job_id: jobId,
         user_id: userId,
@@ -228,7 +232,11 @@ export function JobsProvider({ children }: { children: ReactNode }) {
         fetch("/api/credits/refund", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ amount: job.credit_cost }),
+          body: JSON.stringify({
+            amount: job.credit_cost,
+            reason: "job_refund",
+            jobId,
+          }),
           credentials: "include",
         })
           .then((r) => r.json())
@@ -256,7 +264,11 @@ export function JobsProvider({ children }: { children: ReactNode }) {
         fetch("/api/credits/refund", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ amount: job.credit_cost }),
+          body: JSON.stringify({
+            amount: job.credit_cost,
+            reason: "job_refund",
+            jobId,
+          }),
           credentials: "include",
         })
           .then((r) => r.json())

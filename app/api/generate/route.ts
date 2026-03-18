@@ -132,7 +132,7 @@ export async function POST(req: Request) {
     // 3. Upload to Supabase Storage
     const fileName = `${user.id}/${projectId}/${Date.now()}.wav`;
     const { error: storageError } = await serviceSupabase.storage
-      .from("audio-projects")
+      .from("generated-audio")
       .upload(fileName, buffer, {
         contentType: "audio/wav",
         upsert: true,
@@ -147,15 +147,26 @@ export async function POST(req: Request) {
       );
     }
 
-    // 4. Get Public URL
-    const {
-      data: { publicUrl },
-    } = serviceSupabase.storage.from("audio-projects").getPublicUrl(fileName);
+    // 4. Create signed URL (1h)
+    const { data: signed, error: signedError } = await serviceSupabase.storage
+      .from("generated-audio")
+      .createSignedUrl(fileName, 3600);
+
+    if (signedError || !signed?.signedUrl) {
+      // eslint-disable-next-line no-console
+      console.error("[api/generate] signed url error", signedError);
+      return NextResponse.json(
+        { error: "Failed to create signed URL for audio" },
+        { status: 500 }
+      );
+    }
+
+    const signedUrl = signed.signedUrl;
 
     // 5. Update the Database (optional: store on projects or project_assets)
     const { error: dbError } = await serviceSupabase
       .from("projects")
-      .update({ audio_url: publicUrl, status: "completed" })
+      .update({ audio_url: signedUrl, status: "completed" })
       .eq("id", projectId)
       .eq("user_id", user.id);
 
@@ -165,7 +176,7 @@ export async function POST(req: Request) {
       // We still return the URL so the client can use it even if metadata update failed.
     }
 
-    return NextResponse.json({ url: publicUrl });
+    return NextResponse.json({ url: signedUrl });
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error("GENERATION_ERROR:", error);

@@ -24,7 +24,7 @@ export default function NewProjectPage() {
   const [duration, setDuration] = useState(180);
   const [instruments, setInstruments] = useState<string[]>([]);
   const [prompt, setPrompt] = useState(""); // describe your track (Suno-style, for AI generation)
-  const [referenceNote, setReferenceNote] = useState(""); // placeholder for uploads
+  const [referenceFile, setReferenceFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -51,7 +51,7 @@ export default function NewProjectPage() {
           mood,
           duration,
           instruments,
-          referenceUploads: referenceNote ? [referenceNote] : [],
+          referenceUploads: [],
         });
       }
 
@@ -76,7 +76,7 @@ export default function NewProjectPage() {
         duration,
         instruments,
         prompt: prompt.trim() || undefined,
-        referenceUploads: referenceNote ? [referenceNote] : [],
+        referenceUploads: [],
       });
 
       if (!project || !project.id) {
@@ -85,6 +85,28 @@ export default function NewProjectPage() {
           "Project was created, but it did not return a valid id. Please try again."
         );
         return;
+      }
+
+      // Optional: upload reference audio if provided
+      if (referenceFile) {
+        const form = new FormData();
+        form.append("projectId", project.id);
+        form.append("file", referenceFile);
+        try {
+          const res = await fetch("/api/upload/reference", {
+            method: "POST",
+            body: form,
+          });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            console.warn(
+              "[NewProject] reference upload failed",
+              data.error || res.statusText
+            );
+          }
+        } catch (e) {
+          console.warn("[NewProject] reference upload error", e);
+        }
       }
 
       const target = `/dashboard/studio?project=${project.id}`;
@@ -278,17 +300,19 @@ export default function NewProjectPage() {
 
         <div>
           <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
-            Reference uploads (optional)
+            Reference audio (optional)
           </label>
           <input
-            type="text"
-            value={referenceNote}
-            onChange={(e) => setReferenceNote(e.target.value)}
-            placeholder="Reference uploads — integration coming soon"
-            className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-white placeholder-[var(--muted)] focus:border-[var(--neon-green)]/50 focus:outline-none focus:ring-1 focus:ring-[var(--neon-green)]/50"
+            type="file"
+            accept="audio/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0] ?? null;
+              setReferenceFile(file);
+            }}
+            className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-[var(--muted)] file:mr-3 file:rounded-md file:border-0 file:bg-[var(--purple-mid)] file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-white hover:border-[var(--neon-green)]/50 focus:border-[var(--neon-green)]/50 focus:outline-none focus:ring-1 focus:ring-[var(--neon-green)]/50"
           />
           <p className="mt-1 text-xs text-[var(--muted)]">
-            Placeholder for future reference file uploads.
+            Optional reference track for the AI to vibe with. Audio only; uploaded to your private storage.
           </p>
         </div>
 

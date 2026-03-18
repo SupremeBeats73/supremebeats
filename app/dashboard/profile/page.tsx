@@ -4,10 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "../../context/AuthContext";
 import MicBadge from "../../components/MicBadge";
-import MicTierProgress from "../../components/MicTierProgress";
 import UserBadge from "../../components/UserBadge";
 import { supabase } from "../../lib/supabaseClient";
-import { MOCK_MIC_TIER_PROGRESS } from "../../lib/mockUserPrefs";
 import type { UserProfile } from "../../lib/types";
 
 function normalizeMicTier(v: string | null | undefined): "bronze" | "silver" | "gold" {
@@ -167,10 +165,6 @@ export default function ProfilePage() {
             <MicBadge tier={profile.micTier as "bronze" | "silver" | "gold"} size="sm" />
           </div>
         </div>
-      </div>
-
-      <div className="mb-6">
-        <MicTierProgress data={MOCK_MIC_TIER_PROGRESS} />
       </div>
 
       {/* Reputation (visible) */}

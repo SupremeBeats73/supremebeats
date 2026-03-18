@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
-import { supabase } from "../lib/supabaseClient";
 import CreditCounter from "./CreditCounter";
 
 const iconClass = "h-5 w-5 shrink-0";
@@ -103,16 +102,20 @@ const NAV_ITEMS = [
   },
 ];
 
+type DashboardShellProps = {
+  children: React.ReactNode;
+  /** Server-fetched from profiles.display_name */
+  initialDisplayName?: string | null;
+};
+
 export default function DashboardShell({
   children,
-}: {
-  children: React.ReactNode;
-}) {
+  initialDisplayName = null,
+}: DashboardShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, loading, signOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [displayName, setDisplayName] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -121,22 +124,6 @@ export default function DashboardShell({
   useEffect(() => {
     setMenuOpen(false);
   }, [pathname]);
-
-  useEffect(() => {
-    if (!user?.id) return;
-    supabase
-      .from("profiles")
-      .select("display_name")
-      .eq("id", user.id)
-      .maybeSingle()
-      .then(({ data, error }) => {
-        const name = (data?.display_name as string) ?? "";
-        setDisplayName(name.trim() || null);
-        if (error) {
-          console.warn("[DashboardShell] Could not load display_name:", error.message);
-        }
-      });
-  }, [user?.id]);
 
   if (loading) {
     return (
@@ -192,7 +179,7 @@ export default function DashboardShell({
           <div className="flex items-center gap-3 sm:gap-4">
             <CreditCounter />
             <span className="hidden text-sm text-[var(--muted)] sm:inline">
-              {displayName || "Account"}
+              {initialDisplayName || "Account"}
             </span>
             <button
               onClick={() => signOut().then(() => router.push("/"))}

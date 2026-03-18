@@ -67,11 +67,17 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: urlData } = supabase.storage.from("assets").getPublicUrl(path);
-  const url = urlData?.publicUrl;
-  if (!url) {
-    return NextResponse.json({ error: "Could not get public URL" }, { status: 500 });
+  const { data: urlData, error: signedError } = await supabase.storage
+    .from("assets")
+    .createSignedUrl(path, 3600);
+  if (signedError || !urlData?.signedUrl) {
+    console.error("[profile/upload] signed url", signedError);
+    return NextResponse.json(
+      { error: "Could not create signed URL" },
+      { status: 500 }
+    );
   }
+  const url = urlData.signedUrl;
 
   const column = type === "avatar" ? "avatar_url" : "banner_url";
   const { error: updateError } = await supabase

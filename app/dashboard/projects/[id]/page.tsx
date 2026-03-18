@@ -1,11 +1,44 @@
-"use client";
-
-import { useState } from "react";
-import { useParams } from "next/navigation";
 import Link from "next/link";
-import { useProjects } from "../../../context/ProjectsContext";
-import YouTubePackagingPanel from "../../../components/YouTubePackagingPanel";
-import type { ProjectAssetKind, ProjectAsset } from "../../../lib/types";
+import { redirect } from "next/navigation";
+import { createClient } from "@/utils/supabase/server";
+import type { ProjectAssetKind } from "../../../lib/types";
+import VersionExportButton from "./VersionExportButton";
+import GenerateCoverArtSection from "./GenerateCoverArtSection";
+
+type DbProject = {
+  id: string;
+  user_id: string;
+  name: string;
+  genre: string;
+  bpm: number;
+  key: string;
+  mood: string;
+  duration: number;
+  instruments: string[] | null;
+  reference_uploads: string[] | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type DbAsset = {
+  id: string;
+  project_id: string;
+  user_id: string;
+  kind: ProjectAssetKind;
+  label: string;
+  status: "pending" | "processing" | "success" | "failure";
+  created_at: string;
+  error_message: string | null;
+};
+
+type DbVersion = {
+  id: string;
+  project_id: string;
+  user_id: string;
+  label: string | null;
+  status: string | null;
+  created_at: string;
+};
 
 const ASSET_SECTION_LABELS: Record<ProjectAssetKind, string> = {
   beat: "Beats",
@@ -36,13 +69,11 @@ const ASSET_ORDER: ProjectAssetKind[] = [
 ];
 
 function AssetSection({
-  kind,
   label,
   items,
 }: {
-  kind: ProjectAssetKind;
   label: string;
-  items: ProjectAsset[];
+  items: DbAsset[];
 }) {
   return (
     <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-5 backdrop-blur-sm">
@@ -80,43 +111,153 @@ function AssetSection({
   );
 }
 
-export default function ProjectDetailPage() {
-  const params = useParams();
-  const id = params.id as string;
-  const { getProject, getAssets, getYouTubePackage, mockGenerateYouTubePackage, addAsset } = useProjects();
-  const project = getProject(id);
-  const assets = project ? getAssets(id) : [];
-  const youtubePackage = getYouTubePackage(id);
-  const [packagingGenerating, setPackagingGenerating] = useState(false);
+function VersionsSection({ versions }: { versions: DbVersion[] }) {
+  return (
+    <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-5 backdrop-blur-sm">
+      <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
+        Versions
+      </h2>
+      {versions.length === 0 ? (
+        <p className="text-sm text-[var(--muted)]">
+          No versions yet. Generate a new version from this project.
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {versions.map((v) => (
+            <li
+              key={v.id}
+              className="flex items-center justify-between gap-3 rounded-lg border border-white/5 bg-white/5 px-3 py-2 text-sm"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-white">
+                  {v.label || "Untitled version"}
+                </p>
+                <p className="text-xs text-[var(--muted)]">
+                  {new Date(v.created_at).toLocaleString()}
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                {v.status && (
+                  <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-xs text-[var(--muted)]">
+                    {v.status}
+                  </span>
+                )}
+                <VersionExportButton versionId={v.id} />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
-  const handleGeneratePackaging = async () => {
-    setPackagingGenerating(true);
-    const hadPackage = !!youtubePackage;
-    try {
-      await mockGenerateYouTubePackage(id);
-      if (!hadPackage) await addAsset(id, "youtube_package", "YouTube package");
-    } finally {
-      setPackagingGenerating(false);
-    }
-  };
+async function getProjectData(projectId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
+  if (!user) {
+    redirect("/login");
+  }
+
+  const [{ data: project, error: projectError }, { data: assets, error: assetsError }, { data: versions, error: versionsError }] =
+    await Promise.all([
+      supabase
+        .from("projects")
+        .select(
+          "id, user_id, name, genre, bpm, key, mood, duration, instruments, reference_uploads, created_at, updated_at"
+        )
+        .eq("id", projectId)
+        .eq("user_id", user.id)
+        .maybeSingle<DbProject>(),
+      supabase
+        .from("project_assets")
+        .select(
+          "id, project_id, user_id, kind, label, status, created_at, error_message"
+        )
+        .eq("project_id", projectId)
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false }) as unknown as Promise<{
+        data: DbAsset[] | null;
+        error: any;
+      }>,
+      supabase
+        .from("project_versions")
+        .select("id, project_id, user_id, label, status, created_at")
+        .eq("project_id", projectId)
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false }) as unknown as Promise<{
+        data: DbVersion[] | null;
+        error: any;
+      }>,
+    ]);
+
+  if (projectError) {
+    console.error("[project/[id]] load project", projectError);
+  }
   if (!project) {
+    return null;
+  }
+
+  if (assetsError) {
+    console.error("[project/[id]] load assets", assetsError);
+  }
+  if (versionsError) {
+    console.error("[project/[id]] load versions", versionsError);
+  }
+
+  return {
+    project,
+    assets: assets ?? [],
+    versions: versions ?? [],
+  };
+}
+
+export default async function ProjectDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const data = await getProjectData(params.id);
+
+  if (!data) {
     return (
       <div className="mx-auto max-w-2xl">
         <p className="text-[var(--muted)]">Project not found.</p>
-        <Link href="/dashboard/projects" className="mt-4 inline-block text-sm text-[var(--neon-green)] hover:underline">
+        <Link
+          href="/dashboard/projects"
+          className="mt-4 inline-block text-sm text-[var(--neon-green)] hover:underline"
+        >
           Back to projects
         </Link>
       </div>
     );
   }
 
+  const { project, assets, versions } = data;
+  const instruments = project.instruments ?? [];
+  const referenceUploads = project.reference_uploads ?? [];
+
+  const anyProcessing =
+    assets.some((a) => a.status === "processing") ||
+    versions.some((v) => v.status === "processing");
+  const anySuccess =
+    assets.some((a) => a.status === "success") ||
+    versions.some((v) => v.status === "success");
+  const derivedStatus = anyProcessing
+    ? "Processing"
+    : anySuccess
+      ? "Ready"
+      : "Draft";
+
   const assetsByKind = ASSET_ORDER.reduce(
     (acc, kind) => {
       acc[kind] = assets.filter((a) => a.kind === kind);
       return acc;
     },
-    {} as Record<ProjectAssetKind, ProjectAsset[]>
+    {} as Record<ProjectAssetKind, DbAsset[]>
   );
 
   return (
@@ -131,26 +272,25 @@ export default function ProjectDetailPage() {
           </Link>
           <h1 className="mt-2 text-2xl font-bold text-white">{project.name}</h1>
           <p className="text-sm text-[var(--muted)]">
-            {project.genre || "—"} · {project.bpm} BPM · {project.key || "—"} · {project.mood || "—"}
+            {project.genre || "—"} · {project.bpm} BPM ·{" "}
+            {project.key || "—"} · {project.mood || "—"} · Status:{" "}
+            <span className="text-[var(--neon-green)]">{derivedStatus}</span>
           </p>
         </div>
-        <Link
-          href={`/dashboard/studio?project=${project.id}`}
-          className="rounded-xl bg-[var(--neon-green)] px-5 py-2.5 text-sm font-semibold text-black transition-all hover:bg-[var(--neon-green-dim)] hover:shadow-[0_0_24px_var(--neon-glow)]"
-        >
-          Open in Studio
-        </Link>
-      </div>
-
-      {/* YouTube Packaging — tied to this project */}
-      <div className="mb-8">
-        <YouTubePackagingPanel
-          projectId={id}
-          projectName={project.name}
-          data={youtubePackage}
-          onGenerate={handleGeneratePackaging}
-          generating={packagingGenerating}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href={`/dashboard/studio?project=${project.id}`}
+            className="rounded-xl bg-[var(--neon-green)] px-4 py-2 text-sm font-semibold text-black transition-all hover:bg-[var(--neon-green-dim)] hover:shadow-[0_0_24px_var(--neon-glow)]"
+          >
+            Generate new version
+          </Link>
+          <button
+            type="button"
+            className="rounded-xl border border-[var(--purple-mid)] bg-black/40 px-4 py-2 text-sm font-semibold text-[var(--muted)] transition-all hover:border-[var(--neon-green)] hover:text-[var(--neon-green)]"
+          >
+            Export audio
+          </button>
+        </div>
       </div>
 
       <div className="mb-8 rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-5 backdrop-blur-sm">
@@ -164,14 +304,26 @@ export default function ProjectDetailPage() {
           </div>
           <div>
             <dt className="text-[var(--muted)]">Instruments</dt>
-            <dd className="text-white">{project.instruments.length ? project.instruments.join(", ") : "—"}</dd>
+            <dd className="text-white">
+              {instruments.length ? instruments.join(", ") : "—"}
+            </dd>
           </div>
           <div>
             <dt className="text-[var(--muted)]">Reference uploads</dt>
-            <dd className="text-white">{project.referenceUploads.length ? project.referenceUploads.length + " file(s)" : "—"}</dd>
+            <dd className="text-white">
+              {referenceUploads.length
+                ? `${referenceUploads.length} file(s)`
+                : "—"}
+            </dd>
           </div>
         </dl>
       </div>
+
+      <div className="mb-8">
+        <VersionsSection versions={versions} />
+      </div>
+
+      <GenerateCoverArtSection projectId={project.id} />
 
       <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-[var(--muted)]">
         Generated assets
@@ -180,7 +332,6 @@ export default function ProjectDetailPage() {
         {ASSET_ORDER.map((kind) => (
           <AssetSection
             key={kind}
-            kind={kind}
             label={ASSET_SECTION_LABELS[kind]}
             items={assetsByKind[kind]}
           />

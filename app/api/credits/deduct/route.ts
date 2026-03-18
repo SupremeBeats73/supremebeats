@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  let body: { amount?: number };
+  let body: { amount?: number; reason?: string; jobId?: string };
   try {
     body = await request.json();
   } catch {
@@ -68,11 +68,14 @@ export async function POST(request: Request) {
   }
 
   const newBalance = credits - amount;
+
+  const now = new Date().toISOString();
+
   const { error: updateError } = await supabase
     .from("profiles")
     .update({
       credits: newBalance,
-      updated_at: new Date().toISOString(),
+      updated_at: now,
     })
     .eq("id", user.id);
 
@@ -82,6 +85,28 @@ export async function POST(request: Request) {
       { success: false, error: "Could not deduct credits" },
       { status: 500 }
     );
+  }
+
+  const reason = typeof body?.reason === "string" && body.reason.trim().length
+    ? body.reason.trim()
+    : "job_deduct";
+
+  const jobId = typeof body?.jobId === "string" && body.jobId.trim().length
+    ? body.jobId.trim()
+    : null;
+
+  const { error: ledgerError } = await supabase.from("credit_ledger").insert({
+    user_id: user.id,
+    delta: -amount,
+    reason,
+    job_id: jobId,
+    metadata_json: null,
+    created_at: now,
+  });
+
+  if (ledgerError) {
+    console.error("[credits/deduct] ledger insert", ledgerError);
+    // Do not roll back profile update; just log the failure.
   }
 
   return NextResponse.json({ success: true, newBalance });

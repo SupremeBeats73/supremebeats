@@ -1,0 +1,216 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+type GenerationJob = {
+  id: string;
+  user_id: string;
+  project_id: string;
+  job_type: string;
+  provider: string;
+  provider_job_id: string | null;
+  status: string;
+  error_message: string | null;
+  input_json: unknown;
+  output_json: unknown;
+  created_at: string;
+  updated_at: string;
+};
+
+type LedgerEntry = {
+  id: string;
+  user_id: string;
+  delta: number;
+  reason: string;
+  job_id: string | null;
+  stripe_session_id: string | null;
+  created_at: string;
+};
+
+export default function AdminJobsCreditsPage() {
+  const [jobs, setJobs] = useState<GenerationJob[]>([]);
+  const [ledger, setLedger] = useState<LedgerEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch("/api/admin/jobs-credits", { credentials: "include" });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setError((data.error as string) || `HTTP ${res.status}`);
+          return;
+        }
+        const data = await res.json();
+        if (!cancelled) {
+          setJobs(data.jobs ?? []);
+          setLedger(data.ledger ?? []);
+        }
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const formatDate = (s: string) =>
+    new Date(s).toLocaleString(undefined, {
+      dateStyle: "short",
+      timeStyle: "short",
+    });
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-6xl">
+        <h1 className="mb-2 text-2xl font-bold text-white">Jobs & Credits</h1>
+        <p className="text-sm text-[var(--muted)]">Loading…</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-6xl">
+        <h1 className="mb-2 text-2xl font-bold text-white">Jobs & Credits</h1>
+        <p className="text-sm text-red-400">{error}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-6xl">
+      <h1 className="mb-2 text-2xl font-bold text-white">Jobs & Credits</h1>
+      <p className="mb-8 text-sm text-[var(--muted)]">
+        Generation jobs and credit ledger (joined by job_id). Last 200 of each.
+      </p>
+
+      <section className="mb-10">
+        <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-[var(--muted)]">
+          Generation jobs
+        </h2>
+        <div className="overflow-x-auto rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)]">
+          <table className="w-full min-w-[720px] text-left text-sm">
+            <thead>
+              <tr className="border-b border-[var(--card-border)] text-[var(--muted)]">
+                <th className="p-3 font-medium">Job ID</th>
+                <th className="p-3 font-medium">User</th>
+                <th className="p-3 font-medium">Project</th>
+                <th className="p-3 font-medium">Type</th>
+                <th className="p-3 font-medium">Status</th>
+                <th className="p-3 font-medium">Error</th>
+                <th className="p-3 font-medium">Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              {jobs.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="p-4 text-[var(--muted)]">
+                    No jobs yet.
+                  </td>
+                </tr>
+              ) : (
+                jobs.map((j) => (
+                  <tr
+                    key={j.id}
+                    className="border-b border-[var(--card-border)] last:border-0"
+                  >
+                    <td className="p-3 font-mono text-xs text-white">{j.id}</td>
+                    <td className="p-3 font-mono text-xs text-[var(--muted)]">
+                      {j.user_id.slice(0, 8)}…
+                    </td>
+                    <td className="p-3 font-mono text-xs text-[var(--muted)]">
+                      {j.project_id.slice(0, 8)}…
+                    </td>
+                    <td className="p-3 text-white">{j.job_type}</td>
+                    <td className="p-3">
+                      <span
+                        className={
+                          j.status === "success"
+                            ? "text-emerald-400"
+                            : j.status === "failed"
+                              ? "text-red-400"
+                              : "text-amber-400"
+                        }
+                      >
+                        {j.status}
+                      </span>
+                    </td>
+                    <td className="max-w-[160px] truncate p-3 text-[var(--muted)]" title={j.error_message ?? undefined}>
+                      {j.error_message ?? "—"}
+                    </td>
+                    <td className="p-3 text-[var(--muted)]">{formatDate(j.created_at)}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-[var(--muted)]">
+          Credit ledger
+        </h2>
+        <div className="overflow-x-auto rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)]">
+          <table className="w-full min-w-[560px] text-left text-sm">
+            <thead>
+              <tr className="border-b border-[var(--card-border)] text-[var(--muted)]">
+                <th className="p-3 font-medium">ID</th>
+                <th className="p-3 font-medium">User</th>
+                <th className="p-3 font-medium">Delta</th>
+                <th className="p-3 font-medium">Reason</th>
+                <th className="p-3 font-medium">Job ID</th>
+                <th className="p-3 font-medium">Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ledger.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-4 text-[var(--muted)]">
+                    No ledger entries yet.
+                  </td>
+                </tr>
+              ) : (
+                ledger.map((e) => (
+                  <tr
+                    key={e.id}
+                    className="border-b border-[var(--card-border)] last:border-0"
+                  >
+                    <td className="p-3 font-mono text-xs text-[var(--muted)]">
+                      {e.id.slice(0, 8)}…
+                    </td>
+                    <td className="p-3 font-mono text-xs text-[var(--muted)]">
+                      {e.user_id.slice(0, 8)}…
+                    </td>
+                    <td className="p-3">
+                      <span className={e.delta < 0 ? "text-red-400" : "text-emerald-400"}>
+                        {e.delta > 0 ? "+" : ""}{e.delta}
+                      </span>
+                    </td>
+                    <td className="p-3 text-white">{e.reason}</td>
+                    <td className="p-3 font-mono text-xs text-[var(--muted)]">
+                      {e.job_id ? (
+                        <span title={e.job_id}>{e.job_id.slice(0, 16)}…</span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className="p-3 text-[var(--muted)]">{formatDate(e.created_at)}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  );
+}

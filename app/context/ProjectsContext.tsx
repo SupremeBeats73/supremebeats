@@ -174,7 +174,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         throw new Error("Must be signed in to upload an asset");
       }
 
-      const publicUrl = await uploadAssetToBucket(file, {
+      const { url } = await uploadAssetToBucket(file, {
         folder: `projects/${projectId}`,
       });
 
@@ -192,14 +192,14 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
           a.id === asset.id
             ? {
                 ...a,
-                url: publicUrl,
+                url,
               }
             : a
         )
       );
-      await updateAssetStatusInSupabase(asset.id, "success", undefined, publicUrl);
+      await updateAssetStatusInSupabase(asset.id, "success", undefined, url);
 
-      return { ...asset, url: publicUrl };
+      return { ...asset, url };
     },
     [user?.id]
   );

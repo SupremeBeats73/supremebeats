@@ -22,7 +22,7 @@ for (const f of envFiles) {
 }
 
 async function testConnection() {
-  const { supabase } = await import("./app/lib/supabaseClient.js");
+  const { supabase } = await import("./app/lib/supabaseClient");
 
   console.log("🚀 Testing Supabase connection...");
 

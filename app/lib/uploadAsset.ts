@@ -1,40 +1,34 @@
 "use client";
 
-import { supabase } from "./supabaseClient";
-
 /**
- * Upload a File to the Supabase "assets" bucket and return its public URL.
+ * Upload a File to the server, which stores it in the private
+ * Supabase `assets` bucket and returns a signed URL plus metadata.
  *
- * The file is stored under an optional folder prefix plus a timestamped name
- * to reduce the chance of collisions.
+ * The browser never talks directly to Supabase Storage.
  */
 export async function uploadAssetToBucket(
   file: File,
   options?: { folder?: string }
-): Promise<string> {
+): Promise<{ url: string; path: string }> {
   const folder = options?.folder?.replace(/^\/+|\/+$/g, "") || "uploads";
-  const fileExt = file.name.split(".").pop() || "bin";
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const filePath = `${folder}/${Date.now()}-${safeName}.${fileExt}`;
 
-  const { error: uploadError } = await supabase.storage
-    .from("assets")
-    .upload(filePath, file, {
-      cacheControl: "3600",
-      upsert: false,
-    });
+  const form = new FormData();
+  form.append("file", file);
+  form.append("folder", folder);
 
-  if (uploadError) {
-    throw new Error(
-      uploadError.message || "Failed to upload file to Supabase storage."
-    );
+  const res = await fetch("/api/upload/asset", {
+    method: "POST",
+    body: form,
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data?.url || !data?.path) {
+    const message =
+      (data?.error as string) ||
+      `Upload failed with status ${res.status}`;
+    throw new Error(message);
   }
 
-  const { data } = supabase.storage.from("assets").getPublicUrl(filePath);
-  if (!data?.publicUrl) {
-    throw new Error("Supabase did not return a public URL for the uploaded file.");
-  }
-
-  return data.publicUrl;
+  return { url: data.url as string, path: data.path as string };
 }
 

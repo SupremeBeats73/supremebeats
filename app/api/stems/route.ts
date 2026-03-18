@@ -123,7 +123,7 @@ export async function POST(req: Request) {
       const buffer = Buffer.from(await response.arrayBuffer());
       const filePath = `${user.id}/${projectId}/stems/${name}.wav`;
       const { error: uploadError } = await serviceSupabase.storage
-        .from("audio-projects")
+        .from("generated-audio")
         .upload(filePath, buffer, { contentType: "audio/wav", upsert: true });
 
       if (uploadError) {
@@ -132,10 +132,15 @@ export async function POST(req: Request) {
         continue;
       }
 
-      const { data: urlData } = serviceSupabase.storage
-        .from("audio-projects")
-        .getPublicUrl(filePath);
-      uploadedStems[name] = urlData.publicUrl;
+      const { data: signed, error: signedError } = await serviceSupabase.storage
+        .from("generated-audio")
+        .createSignedUrl(filePath, 3600);
+      if (signedError || !signed?.signedUrl) {
+        // eslint-disable-next-line no-console
+        console.error("[api/stems] signed url error", name, signedError);
+        continue;
+      }
+      uploadedStems[name] = signed.signedUrl;
     }
 
     if (Object.keys(uploadedStems).length === 0) {

@@ -246,20 +246,21 @@ export default function StudioPageContent() {
   const runWithJob = async (
     jobType: import("../../lib/types").JobType,
     label: string,
-    work: () => Promise<string>
+    work: (jobId: string) => Promise<void>
   ) => {
     if (!user) return;
     setJobError(null);
     const result = await submitJob(user.id, projectId, jobType);
-    if (!result.success) {
+    if (!result.success || !result.jobId) {
       setJobError(result.error ?? "Job rejected");
       return;
     }
+    const jobId = result.jobId;
     try {
-      await work();
-      if (result.jobId) completeJob(result.jobId);
+      await work(jobId);
+      completeJob(jobId);
     } catch {
-      if (result.jobId) failJob(result.jobId, true);
+      failJob(jobId, true);
       setJobError("Generation failed; credits refunded.");
     }
   };
@@ -270,12 +271,12 @@ export default function StudioPageContent() {
       realMusicEnabled && (kind === "beat" || kind === "full_song");
 
     if (shouldUseReal && jobType) {
-      await runWithJob(jobType, label, async () => {
+      await runWithJob(jobType, label, async (jobId) => {
         const asset = await addAsset(projectId, kind, label, "processing");
         const res = await fetch("/api/generate/music", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ projectId, kind, assetId: asset.id }),
+          body: JSON.stringify({ projectId, kind, assetId: asset.id, jobId, jobType }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
@@ -286,13 +287,12 @@ export default function StudioPageContent() {
           throw new Error(data.error ?? "Generation failed");
         }
         updateAssetStatus(asset.id, "success", undefined, data.url);
-        return asset.id;
       });
       return;
     }
 
     if (jobType) {
-      await runWithJob(jobType, label, () => mockGenerate(projectId, kind, label));
+      await runWithJob(jobType, label, () => mockGenerate(projectId, kind, label).then(() => {}));
     } else {
       await mockGenerate(projectId, kind, label);
     }

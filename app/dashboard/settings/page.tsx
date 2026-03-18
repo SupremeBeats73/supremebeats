@@ -4,15 +4,33 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import MicTierProgress from "../../components/MicTierProgress";
 import CustomSelect from "../../components/CustomSelect";
-import { MOCK_MIC_TIER_PROGRESS, MOCK_DASHBOARD_CUSTOMIZATION, MOCK_PROFILE_CUSTOMIZATION } from "../../lib/mockUserPrefs";
 import { normalizeUsername } from "../../lib/usernameUtils";
 import { supabase } from "../../lib/supabaseClient";
 import type { DashboardCustomization, PublicProfileCustomization } from "../../lib/types";
 
 export default function SettingsPage() {
   const { user } = useAuth();
-  const [dashboard, setDashboard] = useState<DashboardCustomization>(MOCK_DASHBOARD_CUSTOMIZATION);
-  const [profile, setProfile] = useState<PublicProfileCustomization>(MOCK_PROFILE_CUSTOMIZATION);
+  const [dashboard, setDashboard] = useState<DashboardCustomization>({
+    defaultLandingTab: "overview",
+    widgetOrder: [],
+    visibleWidgets: [],
+    compactMode: false,
+    expandedAnalytics: false,
+    darkThemeVariant: "default",
+    accentColor: "green",
+    pinnedProjectIds: [],
+    pinnedCollaboratorIds: [],
+  });
+  const [profile, setProfile] = useState<PublicProfileCustomization>({
+    bannerImageUrl: null,
+    accentColor: "green",
+    layoutStyle: "grid",
+    featuredTrackId: null,
+    collabShowcaseEnabled: false,
+    advancedUnlocked: false,
+    customCtaLabel: null,
+    customSlug: null,
+  });
   const [username, setUsername] = useState("");
   const [usernameChangesRemaining, setUsernameChangesRemaining] = useState<number>(1);
   const [usernameLoading, setUsernameLoading] = useState(true);
@@ -273,10 +291,6 @@ export default function SettingsPage() {
           </form>
         )}
       </section>
-
-      <div className="mb-8">
-        <MicTierProgress data={MOCK_MIC_TIER_PROGRESS} />
-      </div>
 
       {/* Dashboard customization */}
       <section className="mb-8 rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-6 backdrop-blur-sm">
