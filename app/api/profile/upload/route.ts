@@ -77,13 +77,13 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-  const url = urlData.signedUrl;
-
   const column = type === "avatar" ? "avatar_url" : "banner_url";
   const { error: updateError } = await supabase
     .from("profiles")
     .update({
-      [column]: url,
+      // Store a stable storage path, not a signed URL (which expires).
+      // Clients should resolve this to a signed URL when rendering.
+      [column]: path,
       updated_at: new Date().toISOString(),
     })
     .eq("id", user.id);
@@ -96,5 +96,6 @@ export async function POST(request: Request) {
     );
   }
 
-  return NextResponse.json({ url });
+  // Return a signed URL for immediate preview
+  return NextResponse.json({ url: urlData.signedUrl, path });
 }

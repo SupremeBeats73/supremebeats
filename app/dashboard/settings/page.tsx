@@ -6,6 +6,7 @@ import MicTierProgress from "../../components/MicTierProgress";
 import CustomSelect from "../../components/CustomSelect";
 import { normalizeUsername } from "../../lib/usernameUtils";
 import { supabase } from "../../lib/supabaseClient";
+import { resolveAssetsSignedUrl } from "../../lib/storageSignedUrls";
 import type { DashboardCustomization, PublicProfileCustomization } from "../../lib/types";
 
 export default function SettingsPage() {
@@ -73,8 +74,12 @@ export default function SettingsPage() {
         .eq("id", user.id)
         .maybeSingle()
     ).then(({ data }) => {
-      setAvatarUrl((data?.avatar_url as string) ?? null);
-      setBannerUrl((data?.banner_url as string) ?? null);
+      void Promise.resolve(resolveAssetsSignedUrl(supabase, (data?.avatar_url as string) ?? null)).then(
+        (u) => setAvatarUrl(u)
+      );
+      void Promise.resolve(resolveAssetsSignedUrl(supabase, (data?.banner_url as string) ?? null)).then(
+        (u) => setBannerUrl(u)
+      );
       const dashboardPrefs = (data as any)?.dashboard_prefs ?? null;
       const profilePrefs = (data as any)?.profile_prefs ?? null;
       if (dashboardPrefs && typeof dashboardPrefs === "object") {

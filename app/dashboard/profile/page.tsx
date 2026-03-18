@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import MicBadge from "../../components/MicBadge";
 import UserBadge from "../../components/UserBadge";
 import { supabase } from "../../lib/supabaseClient";
+import { resolveAssetsSignedUrl } from "../../lib/storageSignedUrls";
 import type { UserProfile } from "../../lib/types";
 
 function normalizeMicTier(
@@ -37,18 +38,22 @@ export default function ProfilePage() {
         .select("id, display_name, bio, mic_tier, updated_at, avatar_url, banner_url, is_admin")
         .eq("id", user.id)
         .maybeSingle()
-    ).then(({ data }) => {
+    ).then(async ({ data }) => {
         if (data) {
           const rawDisplayName = (data.display_name as string) ?? null;
           const effectiveUsername =
             (rawDisplayName && rawDisplayName.trim()) ||
             user.email?.split("@")[0] ||
             "creator";
+          const [avatar, banner] = await Promise.all([
+            resolveAssetsSignedUrl(supabase, (data.avatar_url as string) ?? null),
+            resolveAssetsSignedUrl(supabase, (data.banner_url as string) ?? null),
+          ]);
           setProfile({
             id: data.id,
             username: effectiveUsername,
-            profileImageUrl: (data.avatar_url as string) ?? null,
-            bannerImageUrl: (data.banner_url as string) ?? null,
+            profileImageUrl: avatar,
+            bannerImageUrl: banner,
             bio: (data.bio as string) ?? null,
             followers: 0,
             following: 0,
