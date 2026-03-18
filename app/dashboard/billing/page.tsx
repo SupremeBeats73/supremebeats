@@ -26,8 +26,8 @@ export default function BillingPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <h1 className="mb-2 text-2xl font-bold text-white">Billing</h1>
+    <div className="mx-auto max-w-2xl px-4 sm:px-0">
+      <h1 className="mb-2 text-xl font-bold text-white sm:text-2xl">Billing</h1>
       <p className="text-[var(--muted)]">
         Manage your subscription, payment method, and invoices.
       </p>
@@ -47,7 +47,7 @@ export default function BillingPage() {
             type="button"
             onClick={openPortal}
             disabled={loading}
-            className="flex items-center gap-2 rounded-xl bg-[var(--neon-green)] px-5 py-2.5 text-sm font-semibold text-black transition-opacity hover:bg-[var(--neon-green-dim)] disabled:opacity-60"
+            className="flex min-h-[44px] items-center gap-2 rounded-xl bg-[var(--neon-green)] px-5 py-2.5 text-sm font-semibold text-black transition-opacity hover:bg-[var(--neon-green-dim)] disabled:opacity-60"
           >
             {loading ? (
               <>

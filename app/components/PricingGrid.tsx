@@ -57,18 +57,18 @@ export default function PricingGrid({
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 lg:grid-cols-5">
+    <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:gap-6 sm:p-6 lg:grid-cols-5">
       {plans.map((plan) => (
         <div
           key={plan.id ?? plan.name}
-          className={`relative flex flex-col items-center rounded-3xl border p-6 transition-all hover:scale-[1.02] ${
+          className={`relative flex flex-col items-center rounded-2xl border p-4 transition-all hover:scale-[1.02] sm:rounded-3xl sm:p-6 ${
             plan.featured
               ? "z-10 border-yellow-500 bg-gradient-to-b from-yellow-500/20 to-black shadow-[0_0_30px_-10px_rgba(234,179,8,0.3)] lg:scale-105"
               : "border-white/10 bg-white/5 hover:border-white/20"
           }`}
         >
           {plan.featured && (
-            <span className="absolute -top-3 rounded-full bg-yellow-500 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-black shadow-lg">
+            <span className="absolute -top-3 rounded-full bg-yellow-500 px-3 py-1.5 text-xs font-black uppercase tracking-widest text-black shadow-lg">
               Most Elite
             </span>
           )}
@@ -87,7 +87,7 @@ export default function PricingGrid({
             {plan.name}
           </h3>
           <p className="mb-3 mt-1 text-2xl font-black text-white">{plan.price}</p>
-          <p className="mb-6 flex-grow text-center text-xs leading-relaxed text-gray-400">
+          <p className="mb-4 flex-grow text-center text-xs leading-relaxed text-gray-400 sm:mb-6 sm:text-sm">
             {plan.desc}
           </p>
 
@@ -102,7 +102,7 @@ export default function PricingGrid({
                     ? "Buy Coins"
                     : "Upgrade"
               }
-              className={`w-full rounded-xl py-3 text-sm font-black transition-all ${
+              className={`w-full min-h-[44px] rounded-xl py-3 text-sm font-black transition-all ${
                 plan.featured
                   ? "bg-yellow-500 text-black hover:bg-yellow-400"
                   : "bg-white text-black hover:bg-gray-200"

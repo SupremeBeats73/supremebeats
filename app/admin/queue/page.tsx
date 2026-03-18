@@ -13,8 +13,10 @@ export default function AdminQueuePage() {
   const failed: Job[] = allJobs.filter((j) => j.status === "failed");
 
   return (
-    <div className="mx-auto max-w-4xl">
-      <h1 className="mb-2 text-2xl font-bold text-white">Queue monitor</h1>
+    <div className="mx-auto max-w-4xl px-4 sm:px-0">
+      <h1 className="mb-2 text-xl font-bold text-white sm:text-2xl">
+        Queue monitor
+      </h1>
       <p className="mb-8 text-sm text-[var(--muted)]">
         Live queue view. Retry failed (max {JOB_LIMITS.maxRetries} retries), cancel stuck, pause automation.
       </p>
@@ -77,7 +79,50 @@ export default function AdminQueuePage() {
         <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-[var(--muted)]">
           All jobs (last 50)
         </h2>
-        <div className="overflow-x-auto rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)]">
+
+        {/* Mobile list */}
+        <div className="sm:hidden">
+          <div className="space-y-2">
+            {allJobs.slice(-50).reverse().map((j) => (
+              <div
+                key={j.job_id}
+                className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-mono text-xs text-white" title={j.job_id}>
+                      {j.job_id}
+                    </p>
+                    <p className="mt-1 text-sm text-white">
+                      {j.job_type}
+                    </p>
+                    <p className="mt-1 text-xs text-[var(--muted)]">
+                      {j.project_id}
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <StatusBadge status={j.status} />
+                    <p className="mt-2 text-xs text-[var(--muted)]">
+                      retries: {j.retry_count}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex items-center justify-between gap-3 text-xs">
+                  <span className="text-[var(--muted)]">
+                    user {j.user_id.slice(0, 8)}…
+                  </span>
+                  <span className="text-[var(--muted)]">
+                    {new Date(j.created_at).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden overflow-x-auto rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] sm:block">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-white/10">

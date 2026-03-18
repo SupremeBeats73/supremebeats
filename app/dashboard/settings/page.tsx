@@ -196,8 +196,8 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <h1 className="mb-2 text-2xl font-bold text-white">Settings</h1>
+    <div className="mx-auto max-w-3xl px-4 sm:px-0">
+      <h1 className="mb-2 text-xl font-bold text-white sm:text-2xl">Settings</h1>
       <p className="mb-8 text-sm text-[var(--muted)]">
         Dashboard and profile customization. No custom HTML; styling does not affect ranking.
       </p>
@@ -241,7 +241,7 @@ export default function SettingsPage() {
                   type="button"
                   disabled={avatarUploading}
                   onClick={() => avatarInputRef.current?.click()}
-                  className="rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-50"
+                  className="min-h-[44px] rounded-lg border border-white/20 bg-white/5 px-4 py-2.5 text-sm text-white hover:bg-white/10 disabled:opacity-50"
                 >
                   {avatarUploading ? "Uploading…" : "Upload"}
                 </button>
@@ -270,7 +270,7 @@ export default function SettingsPage() {
                 type="button"
                 disabled={bannerUploading}
                 onClick={() => bannerInputRef.current?.click()}
-                className="rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-50"
+                className="min-h-[44px] rounded-lg border border-white/20 bg-white/5 px-4 py-2.5 text-sm text-white hover:bg-white/10 disabled:opacity-50"
               >
                 {bannerUploading ? "Uploading…" : "Upload cover"}
               </button>
@@ -320,7 +320,7 @@ export default function SettingsPage() {
             <button
               type="submit"
               disabled={usernameSaving || usernameChangesRemaining < 1}
-              className="rounded-lg bg-[var(--neon-green)] px-4 py-2 text-sm font-semibold text-black hover:bg-[var(--neon-green-dim)] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="min-h-[44px] rounded-lg bg-[var(--neon-green)] px-4 py-2.5 text-sm font-semibold text-black hover:bg-[var(--neon-green-dim)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {usernameSaving ? "Saving…" : "Save username"}
             </button>
@@ -490,7 +490,7 @@ export default function SettingsPage() {
       </section>
 
       {/* Save bar */}
-      <div className="mt-8 flex flex-col items-start justify-between gap-3 rounded-xl border border-white/10 bg-white/5 p-5 sm:flex-row sm:items-center">
+      <div className="mt-8 flex flex-col items-stretch justify-between gap-3 rounded-xl border border-white/10 bg-white/5 p-4 sm:flex-row sm:items-center sm:p-5">
         <div className="text-sm">
           <p className="text-white">Save settings</p>
           <p className="text-xs text-[var(--muted)]">
@@ -503,7 +503,7 @@ export default function SettingsPage() {
           type="button"
           onClick={handleSavePreferences}
           disabled={prefsSaving || !user?.id}
-          className="rounded-lg bg-[var(--neon-green)] px-5 py-2 text-sm font-semibold text-black hover:bg-[var(--neon-green-dim)] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full min-h-[44px] rounded-lg bg-[var(--neon-green)] px-5 py-2.5 text-sm font-semibold text-black hover:bg-[var(--neon-green-dim)] disabled:opacity-50 disabled:cursor-not-allowed sm:w-auto"
         >
           {prefsSaving ? "Saving…" : "Save changes"}
         </button>

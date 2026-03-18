@@ -93,7 +93,7 @@ export default function FeedCard({
                   key={v}
                   type="button"
                   onClick={() => handleRate(v)}
-                  className={`rounded p-0.5 text-sm ${userRating !== null && v <= userRating ? "text-amber-400" : "text-[var(--muted)] hover:text-amber-400"}`}
+                  className={`min-h-[44px] min-w-[44px] rounded p-2 text-sm ${userRating !== null && v <= userRating ? "text-amber-400" : "text-[var(--muted)] hover:text-amber-400"}`}
                 >
                   ★
                 </button>

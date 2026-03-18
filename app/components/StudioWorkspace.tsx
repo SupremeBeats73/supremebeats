@@ -275,7 +275,7 @@ export default function StudioWorkspace({
   const isBusy = isGenerating || isSplitting;
 
   return (
-    <div className="glass-panel glass-panel--status relative grid gap-6 rounded-3xl p-6 text-white md:grid-cols-[1.7fr_1fr]">
+    <div className="glass-panel glass-panel--status relative grid min-w-0 gap-4 rounded-2xl p-4 text-white sm:gap-6 sm:rounded-3xl sm:p-6 md:grid-cols-[1.7fr_1fr]">
       {/* Overlay while generating */}
       {isBusy && (
         <div className="glass-panel absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 rounded-3xl">
@@ -308,25 +308,25 @@ export default function StudioWorkspace({
               <span>{transportState === "playing" ? "Playing" : transportState === "paused" ? "Paused" : "Stopped"}</span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               type="button"
               onClick={handlePlay}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#6E2CF2] text-sm font-semibold text-white shadow-[0_0_18px_rgba(110,44,242,0.8)] transition hover:bg-[#8242ff]"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#6E2CF2] text-sm font-semibold text-white shadow-[0_0_18px_rgba(110,44,242,0.8)] transition hover:bg-[#8242ff]"
             >
               ▶
             </button>
             <button
               type="button"
               onClick={handlePause}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/40 text-xs text-white/80 transition hover:bg-white/10"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-black/40 text-xs text-white/80 transition hover:bg-white/10"
             >
               ‖
             </button>
             <button
               type="button"
               onClick={handleStop}
-              className="flex h-9 items-center justify-center rounded-full border border-white/20 bg-black/40 px-3 text-xs font-medium text-white/80 transition hover:bg-white/10"
+              className="flex h-11 min-w-[44px] items-center justify-center rounded-full border border-white/20 bg-black/40 px-3 text-xs font-medium text-white/80 transition hover:bg-white/10"
             >
               Stop
             </button>
@@ -362,7 +362,7 @@ export default function StudioWorkspace({
                   max={200}
                   value={bpm}
                   onChange={(e) => setBpm(e.target.value)}
-                  className="w-full rounded-lg border border-white/15 bg-black/40 px-2 py-1.5 text-xs text-white outline-none ring-0 transition focus:border-[#6E2CF2] focus:bg-black/60"
+                  className="w-full min-h-[44px] rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white outline-none ring-0 transition focus:border-[#6E2CF2] focus:bg-black/60 sm:min-h-0 sm:px-2 sm:py-1.5 sm:text-xs"
                 />
               </div>
               <div>
@@ -371,7 +371,7 @@ export default function StudioWorkspace({
                   type="text"
                   value={key}
                   onChange={(e) => setKey(e.target.value)}
-                  className="w-full rounded-lg border border-white/15 bg-black/40 px-2 py-1.5 text-xs text-white outline-none ring-0 transition focus:border-[#6E2CF2] focus:bg-black/60"
+                  className="w-full min-h-[44px] rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white outline-none ring-0 transition focus:border-[#6E2CF2] focus:bg-black/60 sm:min-h-0 sm:px-2 sm:py-1.5 sm:text-xs"
                 />
               </div>
             </div>
@@ -381,7 +381,7 @@ export default function StudioWorkspace({
                 type="text"
                 value={genre}
                 onChange={(e) => setGenre(e.target.value)}
-                className="w-full rounded-lg border border-white/15 bg-black/40 px-2 py-1.5 text-xs text-white outline-none ring-0 transition focus:border-[#6E2CF2] focus:bg-black/60"
+                className="w-full min-h-[44px] rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white outline-none ring-0 transition focus:border-[#6E2CF2] focus:bg-black/60 sm:min-h-0 sm:px-2 sm:py-1.5 sm:text-xs"
               />
             </div>
             <div>
@@ -390,7 +390,7 @@ export default function StudioWorkspace({
                 type="text"
                 value={chords}
                 onChange={(e) => setChords(e.target.value)}
-                className="w-full rounded-lg border border-white/15 bg-black/40 px-2 py-1.5 text-xs text-white outline-none ring-0 transition focus:border-[#6E2CF2] focus:bg-black/60"
+                className="w-full min-h-[44px] rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white outline-none ring-0 transition focus:border-[#6E2CF2] focus:bg-black/60 sm:min-h-0 sm:px-2 sm:py-1.5 sm:text-xs"
               />
             </div>
           </div>
@@ -415,7 +415,7 @@ export default function StudioWorkspace({
             type="button"
             onClick={handleSplitStems}
             disabled={isBusy}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#6E2CF2] bg-transparent px-4 py-2 text-sm font-semibold text-[#6E2CF2] shadow-[0_0_18px_rgba(110,44,242,0.5)] transition hover:bg-[#6E2CF2]/10 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-[#6E2CF2] bg-transparent px-4 py-3 text-sm font-semibold text-[#6E2CF2] sm:py-2 shadow-[0_0_18px_rgba(110,44,242,0.5)] transition hover:bg-[#6E2CF2]/10 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSplitting ? "Splitting Stems…" : "Split Stems"}
           </button>
@@ -424,7 +424,7 @@ export default function StudioWorkspace({
             type="button"
             onClick={handleGenerate}
             disabled={isGenerating || (creditsLoading ? false : creditsRemaining < 1)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#6E2CF2] px-4 py-2 text-sm font-semibold text-white shadow-[0_0_24px_rgba(110,44,242,0.9)] transition hover:bg-[#8242ff] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-[#6E2CF2] px-4 py-3 text-sm font-semibold text-white shadow-[0_0_24px_rgba(110,44,242,0.9)] transition hover:bg-[#8242ff] disabled:cursor-not-allowed disabled:opacity-60 sm:py-2"
           >
             {isGenerating ? "Generating…" : "Generate"}
           </button>

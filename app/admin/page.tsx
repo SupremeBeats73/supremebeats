@@ -60,8 +60,10 @@ export default async function AdminOverviewPage() {
   const stats = await getAdminStats();
 
   return (
-    <div className="mx-auto max-w-4xl">
-      <h1 className="mb-2 text-2xl font-bold text-white">Admin overview</h1>
+    <div className="mx-auto max-w-4xl px-4 sm:px-0">
+      <h1 className="mb-2 text-xl font-bold text-white sm:text-2xl">
+        Admin overview
+      </h1>
       <p className="mb-8 text-sm text-[var(--muted)]">
         Platform control. Formulas and internal ranking math are not exposed here.
       </p>
@@ -92,7 +94,44 @@ export default async function AdminOverviewPage() {
             <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-[var(--muted)]">
               Recent billing events (10)
             </h2>
-            <div className="overflow-hidden rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)]">
+
+            {/* Mobile list */}
+            <div className="sm:hidden">
+              {stats.recentBillingEvents.length === 0 ? (
+                <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-4 text-sm text-[var(--muted)]">
+                  No billing events yet
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {stats.recentBillingEvents.map((ev) => (
+                    <div
+                      key={ev.id}
+                      className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-4"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate font-mono text-xs text-white" title={ev.user_id ?? undefined}>
+                            {ev.user_id ?? "—"}
+                          </p>
+                          <p className="mt-1 text-sm text-white">
+                            {ev.stripe_event_type ?? "—"}
+                          </p>
+                        </div>
+                        <p className="text-sm text-white">
+                          {ev.amount != null ? ev.amount : "—"}
+                        </p>
+                      </div>
+                      <p className="mt-3 text-xs text-[var(--muted)]">
+                        {new Date(ev.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden overflow-hidden rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] sm:block">
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-white/10 text-[var(--muted)]">

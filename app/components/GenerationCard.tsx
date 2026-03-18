@@ -141,7 +141,7 @@ export default function GenerationCard({
                     e.stopPropagation();
                     handleTogglePlay();
                   }}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--neon-green)] text-sm font-semibold text-black shadow-[0_0_18px_rgba(34,197,94,0.6)] transition-transform hover:scale-105"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--neon-green)] text-sm font-semibold text-black shadow-[0_0_18px_rgba(34,197,94,0.6)] transition-transform hover:scale-105"
                 >
                   {isPlaying ? "‖" : "▶"}
                 </button>
@@ -186,7 +186,7 @@ export default function GenerationCard({
                   // no-op
                 }
               }}
-              className="rounded-lg border border-[var(--neon-green)]/40 bg-black/60 px-3 py-1.5 text-[11px] font-medium text-[var(--neon-green)] shadow-[0_0_16px_rgba(34,197,94,0.4)] transition-colors hover:bg-[var(--neon-green)] hover:text-black"
+              className="min-h-[44px] rounded-lg border border-[var(--neon-green)]/40 bg-black/60 px-4 py-2.5 text-xs font-medium text-[var(--neon-green)] shadow-[0_0_16px_rgba(34,197,94,0.4)] transition-colors hover:bg-[var(--neon-green)] hover:text-black"
             >
               Download
             </button>

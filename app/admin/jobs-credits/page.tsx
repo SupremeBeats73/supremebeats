@@ -69,8 +69,10 @@ export default function AdminJobsCreditsPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-6xl">
-        <h1 className="mb-2 text-2xl font-bold text-white">Jobs & Credits</h1>
+      <div className="mx-auto max-w-6xl px-4 sm:px-0">
+        <h1 className="mb-2 text-xl font-bold text-white sm:text-2xl">
+          Jobs & Credits
+        </h1>
         <p className="text-sm text-[var(--muted)]">Loading…</p>
       </div>
     );
@@ -78,16 +80,20 @@ export default function AdminJobsCreditsPage() {
 
   if (error) {
     return (
-      <div className="mx-auto max-w-6xl">
-        <h1 className="mb-2 text-2xl font-bold text-white">Jobs & Credits</h1>
+      <div className="mx-auto max-w-6xl px-4 sm:px-0">
+        <h1 className="mb-2 text-xl font-bold text-white sm:text-2xl">
+          Jobs & Credits
+        </h1>
         <p className="text-sm text-red-400">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
-      <h1 className="mb-2 text-2xl font-bold text-white">Jobs & Credits</h1>
+    <div className="mx-auto max-w-6xl px-4 sm:px-0">
+      <h1 className="mb-2 text-xl font-bold text-white sm:text-2xl">
+        Jobs & Credits
+      </h1>
       <p className="mb-8 text-sm text-[var(--muted)]">
         Generation jobs and credit ledger (joined by job_id). Last 200 of each.
       </p>
@@ -96,7 +102,77 @@ export default function AdminJobsCreditsPage() {
         <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-[var(--muted)]">
           Generation jobs
         </h2>
-        <div className="overflow-x-auto rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)]">
+
+        {/* Mobile list (stacked cards) */}
+        <div className="sm:hidden">
+          {jobs.length === 0 ? (
+            <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-4 text-sm text-[var(--muted)]">
+              No jobs yet.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {jobs.map((j) => (
+                <div
+                  key={j.id}
+                  className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-mono text-xs text-white" title={j.id}>
+                        {j.id}
+                      </p>
+                      <p className="mt-1 text-sm text-white">{j.job_type}</p>
+                    </div>
+                    <span
+                      className={
+                        j.status === "success"
+                          ? "text-emerald-400"
+                          : j.status === "failed"
+                            ? "text-red-400"
+                            : "text-amber-400"
+                      }
+                    >
+                      {j.status}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 grid gap-2 text-xs">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[var(--muted)]">User</span>
+                      <span className="font-mono text-[var(--muted)]">
+                        {j.user_id.slice(0, 8)}…
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[var(--muted)]">Project</span>
+                      <span className="font-mono text-[var(--muted)]">
+                        {j.project_id.slice(0, 8)}…
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[var(--muted)]">Created</span>
+                      <span className="text-[var(--muted)]">
+                        {formatDate(j.created_at)}
+                      </span>
+                    </div>
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="text-[var(--muted)]">Error</span>
+                      <span
+                        className="max-w-[70%] truncate text-right text-[var(--muted)]"
+                        title={j.error_message ?? undefined}
+                      >
+                        {j.error_message ?? "—"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden overflow-x-auto rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] sm:block">
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead>
               <tr className="border-b border-[var(--card-border)] text-[var(--muted)]">
@@ -143,10 +219,15 @@ export default function AdminJobsCreditsPage() {
                         {j.status}
                       </span>
                     </td>
-                    <td className="max-w-[160px] truncate p-3 text-[var(--muted)]" title={j.error_message ?? undefined}>
+                    <td
+                      className="max-w-[160px] truncate p-3 text-[var(--muted)]"
+                      title={j.error_message ?? undefined}
+                    >
                       {j.error_message ?? "—"}
                     </td>
-                    <td className="p-3 text-[var(--muted)]">{formatDate(j.created_at)}</td>
+                    <td className="p-3 text-[var(--muted)]">
+                      {formatDate(j.created_at)}
+                    </td>
                   </tr>
                 ))
               )}
@@ -159,7 +240,64 @@ export default function AdminJobsCreditsPage() {
         <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-[var(--muted)]">
           Credit ledger
         </h2>
-        <div className="overflow-x-auto rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)]">
+
+        {/* Mobile list (stacked cards) */}
+        <div className="sm:hidden">
+          {ledger.length === 0 ? (
+            <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-4 text-sm text-[var(--muted)]">
+              No ledger entries yet.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {ledger.map((e) => (
+                <div
+                  key={e.id}
+                  className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p
+                        className="truncate font-mono text-xs text-[var(--muted)]"
+                        title={e.id}
+                      >
+                        {e.id.slice(0, 16)}…
+                      </p>
+                      <p className="mt-1 text-sm text-white">{e.reason}</p>
+                    </div>
+                    <span className={e.delta < 0 ? "text-red-400" : "text-emerald-400"}>
+                      {e.delta > 0 ? "+" : ""}
+                      {e.delta}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 grid gap-2 text-xs">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[var(--muted)]">User</span>
+                      <span className="font-mono text-[var(--muted)]">
+                        {e.user_id.slice(0, 8)}…
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[var(--muted)]">Job</span>
+                      <span className="font-mono text-[var(--muted)]" title={e.job_id ?? undefined}>
+                        {e.job_id ? `${e.job_id.slice(0, 16)}…` : "—"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[var(--muted)]">Created</span>
+                      <span className="text-[var(--muted)]">
+                        {formatDate(e.created_at)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden overflow-x-auto rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] sm:block">
           <table className="w-full min-w-[560px] text-left text-sm">
             <thead>
               <tr className="border-b border-[var(--card-border)] text-[var(--muted)]">

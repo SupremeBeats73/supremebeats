@@ -265,10 +265,10 @@ export default function Home() {
         </SectionWrapper>
 
         {/* Pricing */}
-        <section className="border-t border-white/5 bg-gradient-to-b from-transparent to-white/[0.02] py-24 px-4">
+        <section className="border-t border-white/5 bg-gradient-to-b from-transparent to-white/[0.02] px-4 py-12 sm:px-6 sm:py-16 md:py-24">
           <div className="mx-auto max-w-7xl">
-            <div className="mb-16 text-center">
-              <h2 className="mb-4 text-4xl font-bold text-white md:text-5xl">
+            <div className="mb-8 text-center sm:mb-12 md:mb-16">
+              <h2 className="mb-4 text-2xl font-bold text-white sm:text-4xl md:text-5xl">
                 Level Up Your <span className="text-[var(--neon-green)]">Vibe</span>
               </h2>
               <p className="mx-auto max-w-2xl text-lg text-[var(--muted)]">

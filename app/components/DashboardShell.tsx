@@ -183,7 +183,7 @@ export default function DashboardShell({
             </span>
             <button
               onClick={() => signOut().then(() => router.push("/"))}
-              className="text-sm text-[var(--muted)] hover:text-white"
+              className="flex h-10 items-center rounded-lg px-3 text-sm text-[var(--muted)] transition-colors hover:bg-white/5 hover:text-white"
             >
               Sign out
             </button>

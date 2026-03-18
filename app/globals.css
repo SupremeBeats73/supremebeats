@@ -59,11 +59,17 @@
   animation: confetti-fall linear forwards;
 }
 
+html {
+  min-width: 0;
+  overflow-x: hidden;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  min-width: 0;
 }
 
 /* Dropdowns: dark list with visible options */
