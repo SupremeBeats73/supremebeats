@@ -106,20 +106,12 @@ export default function ProfilePage() {
     <div className="mx-auto max-w-3xl">
       <div className="mb-6 flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-white">Profile</h1>
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <Link
-            href={`/creator/${encodeURIComponent(profile.username)}`}
-            className="inline-flex min-h-[44px] items-center rounded-lg border border-white/20 bg-white/5 px-4 py-2.5 text-sm font-medium text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[var(--neon-green)]/50"
-          >
-            View public profile
-          </Link>
-          <Link
-            href="/dashboard/settings"
-            className="inline-flex min-h-[44px] items-center rounded-lg border border-white/20 bg-white/5 px-4 py-2.5 text-sm font-medium text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[var(--neon-green)]/50"
-          >
-            Edit profile
-          </Link>
-        </div>
+        <Link
+          href="/dashboard/settings"
+          className="inline-flex min-h-[44px] items-center rounded-lg border border-white/20 bg-white/5 px-4 py-2.5 text-sm font-medium text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[var(--neon-green)]/50"
+        >
+          Edit profile
+        </Link>
       </div>
 
       {/* Banner + avatar */}
