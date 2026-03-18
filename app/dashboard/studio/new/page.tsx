@@ -15,7 +15,7 @@ const INSTRUMENT_OPTIONS = ["Drums", "Bass", "Keys", "Synth", "Strings", "Guitar
 export default function NewProjectPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const { createProject } = useProjects();
+  const { createProject, refreshProjects } = useProjects();
   const [name, setName] = useState("");
   const [genre, setGenre] = useState("");
   const [bpm, setBpm] = useState(120);
@@ -97,7 +97,9 @@ export default function NewProjectPage() {
             method: "POST",
             body: form,
           });
-          if (!res.ok) {
+          if (res.ok) {
+            await refreshProjects();
+          } else {
             const data = await res.json().catch(() => ({}));
             console.warn(
               "[NewProject] reference upload failed",

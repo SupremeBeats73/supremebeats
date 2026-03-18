@@ -440,7 +440,18 @@ export default function StudioPageContent() {
           Workspace
         </h2>
         <div className="grid gap-4 lg:grid-cols-2">
-          <StudioWorkspace projectId={projectId} />
+          <StudioWorkspace
+            projectId={projectId}
+            tracks={
+              project?.referenceUploads?.length
+                ? project.referenceUploads.map((url, i) => ({
+                    id: `ref-${i}`,
+                    label: `Reference ${i + 1}`,
+                    url,
+                  }))
+                : undefined
+            }
+          />
         </div>
       </section>
     </div>

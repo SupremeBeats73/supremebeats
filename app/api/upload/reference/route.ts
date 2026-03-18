@@ -135,6 +135,33 @@ export async function POST(request: Request) {
     );
   }
 
-  return NextResponse.json({ asset: inserted });
+  // Append URL to project.reference_uploads so Studio workspace can load it as a track
+  const { data: projectRow } = await supabase
+    .from("projects")
+    .select("reference_uploads")
+    .eq("id", projectId)
+    .eq("user_id", user.id)
+    .single();
+
+  const existing = (projectRow?.reference_uploads as string[] | null) ?? [];
+  const nextUrls = Array.isArray(existing)
+    ? [...existing, ...(fileUrl ? [fileUrl] : [])]
+    : fileUrl ? [fileUrl] : [];
+
+  const { error: updateProjError } = await supabase
+    .from("projects")
+    .update({
+      reference_uploads: nextUrls,
+      updated_at: now,
+    })
+    .eq("id", projectId)
+    .eq("user_id", user.id);
+
+  if (updateProjError) {
+    console.error("[upload/reference] update project reference_uploads", updateProjError);
+    // Asset was created; still return success so the file is not orphaned
+  }
+
+  return NextResponse.json({ asset: inserted, url: fileUrl });
 }
 

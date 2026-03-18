@@ -8,7 +8,7 @@ const ALLOWED_MIMES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 /**
  * POST: Upload profile picture or cover art.
  * FormData: { type: "avatar" | "banner", file: File }
- * Returns { url: string } on success.
+ * Returns { url: string } on success. Requires storage policy on assets bucket (profile/<uid>/).
  */
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
   if (updateError) {
     console.error("[profile/upload] profiles update", updateError);
     return NextResponse.json(
-      { error: "Could not update profile" },
+      { error: updateError.message || "Could not update profile" },
       { status: 500 }
     );
   }

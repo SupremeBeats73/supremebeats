@@ -31,6 +31,8 @@ type ProjectsContextType = {
   projects: Project[];
   assets: ProjectAsset[];
   projectsLoading: boolean;
+  /** Refetch projects and assets from Supabase (e.g. after reference upload). */
+  refreshProjects: () => Promise<void>;
   createProject: (data: Omit<Project, "id" | "createdAt" | "updatedAt">) => Promise<Project>;
   getProject: (id: string) => Project | undefined;
   getAssets: (projectId: string) => ProjectAsset[];
@@ -111,6 +113,23 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
+  }, [user?.id]);
+
+  const refreshProjects = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const projectList = await fetchProjects(user.id);
+      setProjects(projectList);
+      const ids = projectList.map((p) => p.id);
+      const [assetList, packages] = await Promise.all([
+        fetchAssetsForProjects(user.id, ids),
+        fetchYouTubePackagesForProjects(user.id, ids),
+      ]);
+      setAssets(assetList);
+      setYoutubePackages(packages);
+    } catch (e) {
+      console.error("Failed to refresh projects from Supabase", e);
+    }
   }, [user?.id]);
 
   const createProject = useCallback(
@@ -310,6 +329,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         projects,
         assets,
         projectsLoading,
+        refreshProjects,
         createProject,
         getProject,
         getAssets,
