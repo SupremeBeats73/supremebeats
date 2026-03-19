@@ -53,10 +53,10 @@ export default function SignupPage() {
   async function handleOAuth(provider: OAuthProvider) {
     setError(null);
     setOauthLoading(provider);
-    const redirectTo =
-      typeof window !== "undefined"
-        ? `${window.location.origin}/auth/callback`
-        : undefined;
+    const baseUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ??
+      (typeof window !== "undefined" ? window.location.origin : "");
+    const redirectTo = `${String(baseUrl).replace(/\/$/, "")}/auth/callback`;
     const { data, error: err } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo },
