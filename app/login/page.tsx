@@ -84,7 +84,22 @@ function LoginPageContent() {
       .replace(/^["']/, "")
       .replace(/["']$/, "");
 
-    const redirectTo = new URL("/auth/callback", baseUrl).toString();
+    let redirectTo: string;
+    try {
+      const sanitizedBaseUrl = baseUrl;
+      // If NEXT_PUBLIC_SITE_URL is missing/invalid, fall back to the current origin.
+      if (!/^https?:\/\//i.test(sanitizedBaseUrl)) {
+        const fallbackOrigin =
+          typeof window !== "undefined" ? window.location.origin : "";
+        redirectTo = new URL("/auth/callback", fallbackOrigin).toString();
+      } else {
+        redirectTo = new URL("/auth/callback", sanitizedBaseUrl).toString();
+      }
+    } catch {
+      const fallbackOrigin =
+        typeof window !== "undefined" ? window.location.origin : "";
+      redirectTo = `${fallbackOrigin}/auth/callback`;
+    }
     const { data, error: err } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo },
