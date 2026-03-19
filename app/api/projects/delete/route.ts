@@ -160,7 +160,12 @@ export async function DELETE(request: Request) {
   if (deleteVersionsRes.error) {
     console.error("[projects/delete] project_versions delete", deleteVersionsRes.error);
     return NextResponse.json(
-      { success: false, error: "Could not delete project versions" },
+      {
+        success: false,
+        error:
+          `Could not delete project versions: ` +
+          (deleteVersionsRes.error.message ?? String(deleteVersionsRes.error)),
+      },
       { status: 500 },
     );
   }
@@ -174,7 +179,12 @@ export async function DELETE(request: Request) {
   if (deleteAssetsRes.error) {
     console.error("[projects/delete] project_assets delete", deleteAssetsRes.error);
     return NextResponse.json(
-      { success: false, error: "Could not delete project assets" },
+      {
+        success: false,
+        error:
+          `Could not delete project assets: ` +
+          (deleteAssetsRes.error.message ?? String(deleteAssetsRes.error)),
+      },
       { status: 500 },
     );
   }
@@ -188,7 +198,12 @@ export async function DELETE(request: Request) {
   if (deleteGenerationRes.error) {
     console.error("[projects/delete] generation_jobs delete", deleteGenerationRes.error);
     return NextResponse.json(
-      { success: false, error: "Could not delete project jobs" },
+      {
+        success: false,
+        error:
+          `Could not delete project jobs: ` +
+          (deleteGenerationRes.error.message ?? String(deleteGenerationRes.error)),
+      },
       { status: 500 },
     );
   }
@@ -202,7 +217,12 @@ export async function DELETE(request: Request) {
   if (deleteProjectRes.error) {
     console.error("[projects/delete] projects delete", deleteProjectRes.error);
     return NextResponse.json(
-      { success: false, error: "Could not delete project" },
+      {
+        success: false,
+        error:
+          `Could not delete project: ` +
+          (deleteProjectRes.error.message ?? String(deleteProjectRes.error)),
+      },
       { status: 500 },
     );
   }
