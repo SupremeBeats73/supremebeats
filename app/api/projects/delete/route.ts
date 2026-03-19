@@ -159,6 +159,16 @@ export async function DELETE(request: Request) {
 
   if (deleteVersionsRes.error) {
     console.error("[projects/delete] project_versions delete", deleteVersionsRes.error);
+
+    // Some environments may not have the project_versions table deployed yet (or PostgREST schema cache can lag).
+    // In that case, treat deletion as best-effort and continue with other related tables.
+    const msg = deleteVersionsRes.error.message ?? String(deleteVersionsRes.error);
+    if (msg.includes("Could not find the table") && msg.includes("project_versions")) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        "[projects/delete] Skipping project_versions delete (table not found in schema cache)"
+      );
+    } else {
     return NextResponse.json(
       {
         success: false,
@@ -168,6 +178,7 @@ export async function DELETE(request: Request) {
       },
       { status: 500 },
     );
+    }
   }
 
   const deleteAssetsRes = await supabase
