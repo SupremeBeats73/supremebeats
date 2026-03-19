@@ -173,34 +173,6 @@ export default function Home() {
 
         {/* Hero */}
         <section className="relative flex min-h-[90vh] flex-col items-center justify-center overflow-hidden px-4 pt-24 pb-16 text-center sm:px-6">
-          {/* Floating 3D Gold Mic */}
-          <div
-            className="hero-mic-float pointer-events-none absolute right-[8%] top-[22%] hidden md:block"
-            style={{ perspective: "800px" }}
-          >
-            <Image
-              src="/images/tier-gold.png"
-              alt=""
-              width={160}
-              height={160}
-              className="drop-shadow-[0_0_40px_rgba(234,179,8,0.4)]"
-              aria-hidden
-            />
-          </div>
-          <div
-            className="hero-mic-float pointer-events-none absolute left-[5%] top-[55%] hidden lg:block"
-            style={{ perspective: "800px", animationDelay: "-4s" }}
-          >
-            <Image
-              src="/images/tier-gold.png"
-              alt=""
-              width={120}
-              height={120}
-              className="opacity-80 drop-shadow-[0_0_30px_rgba(234,179,8,0.3)]"
-              aria-hidden
-            />
-          </div>
-
           <div className="relative z-10 mx-auto max-w-3xl">
             <h1
               className="font-extrabold tracking-tight text-white drop-shadow-[0_0_40px_rgba(110,44,242,0.3)] sm:text-5xl md:text-6xl lg:text-7xl"
