@@ -74,10 +74,17 @@ function LoginPageContent() {
   async function handleOAuth(provider: OAuthProvider) {
     setError(null);
     setOauthLoading(provider);
-    const baseUrl =
+    const rawBaseUrl =
       process.env.NEXT_PUBLIC_SITE_URL ??
       (typeof window !== "undefined" ? window.location.origin : "");
-    const redirectTo = `${String(baseUrl).replace(/\/$/, "")}/auth/callback`;
+
+    // Vercel env vars occasionally come through with quotes/whitespace; Supabase expects a valid absolute URL.
+    const baseUrl = String(rawBaseUrl)
+      .trim()
+      .replace(/^["']/, "")
+      .replace(/["']$/, "");
+
+    const redirectTo = new URL("/auth/callback", baseUrl).toString();
     const { data, error: err } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo },
