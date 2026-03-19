@@ -2,9 +2,13 @@
 
 import Link from "next/link";
 import { useProjects } from "../../context/ProjectsContext";
+import { useSearchParams } from "next/navigation";
+import DeleteProjectButton from "./DeleteProjectButton";
 
 export default function ProjectsPage() {
   const { projects, projectsLoading } = useProjects();
+  const searchParams = useSearchParams();
+  const deleted = searchParams.get("deleted") === "1";
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-0">
@@ -22,6 +26,15 @@ export default function ProjectsPage() {
           New project
         </Link>
       </div>
+
+      {deleted && (
+        <div
+          className="mb-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100"
+          role="status"
+        >
+          Project deleted successfully.
+        </div>
+      )}
 
       {projectsLoading ? (
         <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)]/50 p-12 text-center">
@@ -61,6 +74,7 @@ export default function ProjectsPage() {
                   >
                     Open in Studio
                   </Link>
+                  <DeleteProjectButton projectId={p.id} />
                 </div>
               </div>
             </li>

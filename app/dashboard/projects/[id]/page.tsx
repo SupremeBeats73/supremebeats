@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import type { ProjectAssetKind } from "../../../lib/types";
 import VersionExportButton from "../VersionExportButton";
 import GenerateCoverArtSection from "./GenerateCoverArtSection";
+import DeleteProjectButton from "../DeleteProjectButton";
 
 type DbProject = {
   id: string;
@@ -290,6 +291,10 @@ export default async function ProjectDetailPage({
           >
             Export audio
           </button>
+          <DeleteProjectButton
+            projectId={project.id}
+            className="rounded-xl border border-red-500/50 bg-black/40 px-4 py-2 text-sm font-semibold text-red-400 hover:bg-red-500/10"
+          />
         </div>
       </div>
 

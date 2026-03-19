@@ -113,6 +113,7 @@ select option:checked {
   50% { transform: rotateY(180deg) rotateX(5deg); }
 }
 .hero-mic-float {
-  animation: float-rotate-3d 12s ease-in-out infinite;
+  /* Landing hero: keep the mic visuals static (no rotation/spinning). */
+  animation: none;
   transform-style: preserve-3d;
 }
