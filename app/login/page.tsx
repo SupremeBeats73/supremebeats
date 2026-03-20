@@ -21,9 +21,18 @@ function LoginPageContent() {
 
   useEffect(() => {
     const callbackError = searchParams.get("error");
+    const detail = searchParams.get("message");
     if (callbackError === "callback") {
-      setError("Sign-in was not completed. Please try again.");
-      router.replace("/login", { scroll: false });
+      setError(
+        detail && detail.trim()
+          ? formatAuthError(detail)
+          : "Sign-in was not completed. Please try again."
+      );
+      const next = new URLSearchParams(searchParams.toString());
+      next.delete("error");
+      next.delete("message");
+      const q = next.toString();
+      router.replace(q ? `/login?${q}` : "/login", { scroll: false });
     }
   }, [searchParams, router]);
 

@@ -6,7 +6,6 @@ import { supabase } from "../lib/supabaseClient";
 
 const CARD_BORDER = "#2e1065";
 const DURATION_MS = 1200;
-const TICK_MS = 20;
 
 function useCountUp(end: number, start = 0, enabled: boolean) {
   const [value, setValue] = useState(start);
@@ -18,12 +17,13 @@ function useCountUp(end: number, start = 0, enabled: boolean) {
     endRef.current = end;
     startRef.current = value;
     startTimeRef.current = null;
-  }, [end]);
+  }, [end, value]);
 
   useEffect(() => {
     if (!enabled || end <= start) {
-      setValue(end);
-      return;
+      // Avoid synchronous state updates during effect render.
+      const id = window.setTimeout(() => setValue(end), 0);
+      return () => window.clearTimeout(id);
     }
     let rafId: number;
     const easeOutQuart = (t: number) => 1 - (1 - t) ** 4;
@@ -54,8 +54,9 @@ function useCountUpFloat(end: number, decimals: number, enabled: boolean) {
 
   useEffect(() => {
     if (!enabled) {
-      setValue(end);
-      return;
+      // Avoid synchronous state updates during effect render.
+      const id = window.setTimeout(() => setValue(end), 0);
+      return () => window.clearTimeout(id);
     }
     let rafId: number;
     const easeOutQuart = (t: number) => 1 - (1 - t) ** 4;

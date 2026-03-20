@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.supremebeatsstudio.com";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,6 +18,13 @@ export async function POST(request: NextRequest) {
       typeof returnBaseUrl === "string" && /^https?:\/\//.test(returnBaseUrl)
         ? returnBaseUrl.replace(/\/$/, "")
         : request.headers.get("origin") ?? siteUrl;
+
+    if (!origin) {
+      return NextResponse.json(
+        { error: "Server misconfigured: NEXT_PUBLIC_SITE_URL is not set" },
+        { status: 500 }
+      );
+    }
 
     if (!priceId) {
       return NextResponse.json(

@@ -9,7 +9,6 @@ interface CommentUIProps {
 }
 
 export default function CommentUI({
-  trackId,
   commentsCount,
   onSubmit,
 }: CommentUIProps) {

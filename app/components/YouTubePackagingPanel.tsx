@@ -22,6 +22,7 @@ function CopyButton({ text, label }: { text: string; label: string }) {
     <button
       type="button"
       onClick={copy}
+      aria-label={label}
       className="rounded-lg border border-[var(--purple-glow)]/30 bg-[#0f0a1a]/80 px-3 py-1.5 text-xs font-medium text-white transition-all hover:border-[var(--neon-green)]/50 hover:shadow-[0_0_12px_rgba(34,197,94,0.25)]"
     >
       {copied ? "Copied" : "One-Click Copy"}
@@ -59,6 +60,7 @@ export default function YouTubePackagingPanel({
   onGenerate,
   generating,
 }: YouTubePackagingPanelProps) {
+  void projectId;
   if (!data) {
     return (
       <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-6 shadow-[0_0_28px_rgba(124,58,237,0.12)] backdrop-blur-sm">

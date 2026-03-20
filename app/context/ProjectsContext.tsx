@@ -137,7 +137,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       if (!user?.id) {
         if (process.env.NODE_ENV === "development") {
           console.error("[ProjectsContext] createProject called but user is not signed in", {
-            hasUser: !!user,
+            hasUser: !!user?.id,
             userId: user?.id ?? null,
           });
         }

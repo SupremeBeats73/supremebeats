@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import Image from "next/image";
 import MicBadge from "./MicBadge";
 import UserBadge from "./UserBadge";
 import { useAuth } from "../context/AuthContext";
@@ -149,10 +150,12 @@ export default function SupremeCard({
   return (
     <article className="group relative overflow-hidden rounded-xl border border-[#2e1065]/60 bg-black/60 backdrop-blur-md transition-all duration-300 hover:border-[var(--purple-glow)]/40 hover:shadow-[0_0_32px_rgba(124,58,237,0.2)]">
       <div className="relative aspect-square overflow-hidden bg-[#0f0a1a]">
-        <img
+        <Image
           src={artwork}
           alt=""
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+          fill
+          unoptimized
+          className="object-cover transition-transform duration-500 group-hover:scale-110"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
         <button

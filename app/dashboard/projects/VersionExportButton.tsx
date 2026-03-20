@@ -16,7 +16,6 @@ export default function VersionExportButton({ versionId }: { versionId: string }
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data?.url) {
-        // eslint-disable-next-line no-console
         console.error("[VersionExportButton] export failed", data?.error);
         return;
       }

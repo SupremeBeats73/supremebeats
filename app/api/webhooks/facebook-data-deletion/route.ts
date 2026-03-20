@@ -67,7 +67,7 @@ export async function POST(req: Request) {
   }
 
   const facebookUserId = parsed.user_id;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.supremebeatsstudio.com";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(req.url).origin;
   const confirmationCode = `sb-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
   const statusUrl = `${siteUrl.replace(/\/$/, "")}/privacy#data-deletion`;
 

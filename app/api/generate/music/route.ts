@@ -18,6 +18,16 @@ type ProjectRow = {
   duration: number;
 };
 
+type ProjectVersionInsertRow = {
+  project_id: string;
+  user_id: string;
+  label: string | null;
+  status: "success";
+  file_path: string;
+  audio_url: null;
+  asset_type: "generated";
+};
+
 /**
  * POST /api/generate/music
  * Body: { projectId: string, kind: "beat" | "full_song", assetId: string }
@@ -300,7 +310,7 @@ export async function POST(request: Request) {
 
   // Best-effort: record this generation as a project_version for export workflows.
   try {
-    await supabase.from("project_versions").insert({
+    const insertRow: ProjectVersionInsertRow = {
       project_id: projectId,
       user_id: user.id,
       label:
@@ -314,7 +324,8 @@ export async function POST(request: Request) {
       file_path: filePath,
       audio_url: null,
       asset_type: "generated",
-    } as any);
+    };
+    await supabase.from("project_versions").insert(insertRow);
   } catch (e) {
     // Non-fatal; log on server but don't fail the request.
     console.error("[generate/music] project_versions insert", e);

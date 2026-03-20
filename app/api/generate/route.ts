@@ -14,7 +14,6 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  // eslint-disable-next-line no-console
   console.warn(
     "[api/generate] SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is not set. Route will return 500 until configured."
   );
@@ -139,7 +138,6 @@ export async function POST(req: Request) {
       });
 
     if (storageError) {
-      // eslint-disable-next-line no-console
       console.error("[api/generate] storage upload error", storageError);
       return NextResponse.json(
         { error: "Failed to upload audio to storage." },
@@ -153,7 +151,6 @@ export async function POST(req: Request) {
       .createSignedUrl(fileName, 3600);
 
     if (signedError || !signed?.signedUrl) {
-      // eslint-disable-next-line no-console
       console.error("[api/generate] signed url error", signedError);
       return NextResponse.json(
         { error: "Failed to create signed URL for audio" },
@@ -171,14 +168,12 @@ export async function POST(req: Request) {
       .eq("user_id", user.id);
 
     if (dbError) {
-      // eslint-disable-next-line no-console
       console.error("[api/generate] db update error", dbError);
       // We still return the URL so the client can use it even if metadata update failed.
     }
 
     return NextResponse.json({ url: signedUrl });
   } catch (error) {
-    // eslint-disable-next-line no-console
     console.error("GENERATION_ERROR:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });

@@ -5,7 +5,7 @@
 Meta requires a **Data Deletion Request Callback** URL so that when a user removes your app and requests data deletion, Meta can notify your server.
 
 **Callback URL to register in Meta:**  
-`https://www.supremebeatsstudio.com/api/webhooks/facebook-data-deletion`  
+`<NEXT_PUBLIC_SITE_URL>/api/webhooks/facebook-data-deletion`
 (Use your actual site domain from `NEXT_PUBLIC_SITE_URL`.)
 
 **Where to set it:**  

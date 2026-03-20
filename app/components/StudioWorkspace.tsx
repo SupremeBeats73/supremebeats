@@ -17,13 +17,21 @@ type StudioWorkspaceProps = {
   projectId?: string;
 };
 
+type WaveSurferLike = {
+  play: () => void;
+  pause: () => void;
+  seekTo: (progress: number) => void;
+  load: (url: string) => void;
+  destroy: () => void;
+};
+
 export default function StudioWorkspace({
   tracks = [],
   onGenerated,
   projectId,
 }: StudioWorkspaceProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const wavesurferRefs = useRef<any[]>([]);
+  const wavesurferRefs = useRef<WaveSurferLike[]>([]);
   const [transportState, setTransportState] = useState<TransportState>("stopped");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSplitting, setIsSplitting] = useState(false);
@@ -48,7 +56,7 @@ export default function StudioWorkspace({
 
       // Create one WaveSurfer instance per track to mimic a multi-track timeline.
       const root = containerRef.current;
-      const instances: any[] = [];
+      const instances: WaveSurferLike[] = [];
 
       const sources = tracks.length
         ? tracks
@@ -73,8 +81,8 @@ export default function StudioWorkspace({
           cursorWidth: 1,
           barWidth: 2,
           barGap: 1,
-        height: 64,
-      });
+          height: 64,
+        }) as unknown as WaveSurferLike;
         ws.load(track.url);
         instances.push(ws);
       });
@@ -242,7 +250,7 @@ export default function StudioWorkspace({
       const WaveSurfer = (await import("wavesurfer.js")).default;
       const root = containerRef.current;
 
-      Object.entries(data.stems as Record<string, string>).forEach(([name, url]) => {
+      Object.entries(data.stems as Record<string, string>).forEach(([, url]) => {
         if (!url) return;
         const lane = document.createElement("div");
         lane.className =
@@ -257,7 +265,7 @@ export default function StudioWorkspace({
           barWidth: 2,
           barGap: 1,
           height: 64,
-        });
+        }) as unknown as WaveSurferLike;
         ws.load(url);
         wavesurferRefs.current.push(ws);
       });

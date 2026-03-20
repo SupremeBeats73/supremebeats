@@ -9,6 +9,17 @@ import { supabase } from "../../lib/supabaseClient";
 import { resolveAssetsSignedUrl } from "../../lib/storageSignedUrls";
 import type { UserProfile } from "../../lib/types";
 
+type ProfileFetchRow = {
+  id: string;
+  display_name: string | null;
+  bio: string | null;
+  mic_tier: string | null;
+  updated_at: string | null;
+  avatar_url: string | null;
+  banner_url: string | null;
+  is_admin: boolean | null;
+};
+
 function normalizeMicTier(
   v: string | null | undefined,
   isAdmin?: boolean | null
@@ -28,9 +39,12 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!user?.id) {
-      setProfile(null);
-      setLoading(false);
-      return;
+      // Avoid synchronous setState during effect render.
+      const id = window.setTimeout(() => {
+        setProfile(null);
+        setLoading(false);
+      }, 0);
+      return () => window.clearTimeout(id);
     }
     void Promise.resolve(
       supabase
@@ -40,32 +54,33 @@ export default function ProfilePage() {
         .maybeSingle()
     ).then(async ({ data }) => {
         if (data) {
-          const rawDisplayName = (data.display_name as string) ?? null;
+          const row = data as unknown as ProfileFetchRow;
+          const rawDisplayName = row.display_name ?? null;
           const effectiveUsername =
             (rawDisplayName && rawDisplayName.trim()) ||
             user.email?.split("@")[0] ||
             "creator";
           const [avatar, banner] = await Promise.all([
-            resolveAssetsSignedUrl(supabase, (data.avatar_url as string) ?? null),
-            resolveAssetsSignedUrl(supabase, (data.banner_url as string) ?? null),
+            resolveAssetsSignedUrl(supabase, row.avatar_url ?? null),
+            resolveAssetsSignedUrl(supabase, row.banner_url ?? null),
           ]);
           setProfile({
-            id: data.id,
+            id: row.id,
             username: effectiveUsername,
             profileImageUrl: avatar,
             bannerImageUrl: banner,
-            bio: (data.bio as string) ?? null,
+            bio: row.bio ?? null,
             followers: 0,
             following: 0,
             totalPlays: 0,
             weightedRating: 0,
             engagementScore: 0,
             creatorLevel: 1,
-            micTier: normalizeMicTier(data.mic_tier, (data as any).is_admin as boolean | null),
+            micTier: normalizeMicTier(row.mic_tier, row.is_admin),
             reputationSummary: "Creator",
             trustScorePlaceholder: 0,
             revenueSummaryPlaceholder: "—",
-            joinDate: data.updated_at ? new Date(data.updated_at).toISOString().slice(0, 10) : "—",
+            joinDate: row.updated_at ? new Date(row.updated_at).toISOString().slice(0, 10) : "—",
           });
         } else {
           setProfile({

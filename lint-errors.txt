@@ -1,0 +1,395 @@
+﻿
+> supremebeats@0.1.0 lint
+> eslint --max-warnings=0
+
+
+C:\Users\jsnee\supremebeats\app\admin\queue\page.tsx
+  8:11  warning  'jobs' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\jsnee\supremebeats\app\api\generate\music\route.ts
+  317:10  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\jsnee\supremebeats\app\api\generate\route.ts
+   17:3  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+  142:7  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+  156:7  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+  174:7  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+  181:5  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+C:\Users\jsnee\supremebeats\app\api\projects\delete\route.ts
+  167:7  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+C:\Users\jsnee\supremebeats\app\api\stems\route.ts
+   17:3  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+  119:9  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+  130:9  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+  139:9  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+  161:7  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+  168:5  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+C:\Users\jsnee\supremebeats\app\auth\confirm\AuthConfirmContent.tsx
+  22:9  error  'mounted' is never reassigned. Use 'const' instead  prefer-const
+
+C:\Users\jsnee\supremebeats\app\components\AdminShell.tsx
+  26:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\jsnee\supremebeats\app\components\AdminShell.tsx:26:5
+  24 |
+  25 |   useEffect(() => {
+> 26 |     setMenuOpen(false);
+     |     ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  27 |   }, [pathname]);
+  28 |
+  29 |   return (  react-hooks/set-state-in-effect
+
+C:\Users\jsnee\supremebeats\app\components\CommentUI.tsx
+  12:3  warning  'trackId' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\jsnee\supremebeats\app\components\CreatorStats.tsx
+   9:7  warning  'TICK_MS' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+  21:6  warning  React Hook useEffect has a missing dependency: 'value'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        react-hooks/exhaustive-deps
+  25:7  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\jsnee\supremebeats\app\components\CreatorStats.tsx:25:7
+  23 |   useEffect(() => {
+  24 |     if (!enabled || end <= start) {
+> 25 |       setValue(end);
+     |       ^^^^^^^^ Avoid calling setState() directly within an effect
+  26 |       return;
+  27 |     }
+  28 |     let rafId: number;  react-hooks/set-state-in-effect
+  57:7  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\jsnee\supremebeats\app\components\CreatorStats.tsx:57:7
+  55 |   useEffect(() => {
+  56 |     if (!enabled) {
+> 57 |       setValue(end);
+     |       ^^^^^^^^ Avoid calling setState() directly within an effect
+  58 |       return;
+  59 |     }
+  60 |     let rafId: number;                  react-hooks/set-state-in-effect
+
+C:\Users\jsnee\supremebeats\app\components\CreditCounter.tsx
+  17:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\jsnee\supremebeats\app\components\CreditCounter.tsx:17:7
+  15 |   useEffect(() => {
+  16 |     if (!user?.id) {
+> 17 |       setCredits(null);
+     |       ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  18 |       setMicTier(null);
+  19 |       return;
+  20 |     }  react-hooks/set-state-in-effect
+
+C:\Users\jsnee\supremebeats\app\components\DashboardShell.tsx
+  125:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\jsnee\supremebeats\app\components\DashboardShell.tsx:125:5
+  123 |
+  124 |   useEffect(() => {
+> 125 |     setMenuOpen(false);
+      |     ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  126 |   }, [pathname]);
+  127 |
+  128 |   if (loading) {  react-hooks/set-state-in-effect
+
+C:\Users\jsnee\supremebeats\app\components\GenerationCard.tsx
+  129:17  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  153:27  warning  Unused eslint-disable directive (no problems were reported from 'react/no-array-index-key')
+
+C:\Users\jsnee\supremebeats\app\components\StudioWorkspace.tsx
+   26:33  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   51:24  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  245:70  warning  'name' is defined but never used          @typescript-eslint/no-unused-vars
+
+C:\Users\jsnee\supremebeats\app\components\SupremeCard.tsx
+  152:9  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\jsnee\supremebeats\app\components\UserBadge.tsx
+  24:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\jsnee\supremebeats\app\components\UserBadge.tsx:24:7
+  22 |   useEffect(() => {
+  23 |     if (micTierProp !== undefined || !userId) {
+> 24 |       setFetchedTier(null);
+     |       ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  25 |       return;
+  26 |     }
+  27 |     let cancelled = false;  react-hooks/set-state-in-effect
+  36:42  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  @typescript-eslint/no-explicit-any
+
+C:\Users\jsnee\supremebeats\app\components\VisualEngineSection.tsx
+  26:3  warning  'projectId' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\jsnee\supremebeats\app\components\YouTubePackagingPanel.tsx
+  14:29  warning  'label' is defined but never used      @typescript-eslint/no-unused-vars
+  56:3   warning  'projectId' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\jsnee\supremebeats\app\context\JobsContext.tsx
+   58:36  error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `user`, but the source dependencies were [user?.id, user?.email]. Inferred less specific property than source.
+
+C:\Users\jsnee\supremebeats\app\context\JobsContext.tsx:58:36
+  56 |   const [automationPaused, setAutomationPaused] = useState(false);
+  57 |
+> 58 |   const fetchCredits = useCallback(async () => {
+     |                                    ^^^^^^^^^^^^^
+> 59 |     if (!user?.id) {
+     | ^^^^^^^^^^^^^^^^^^^^
+> 60 |       setCreditsRemaining(0);
+     ΓÇª
+     | ^^^^^^^^^^^^^^^^^^^^
+> 78 |     setCreditsLoading(false);
+     | ^^^^^^^^^^^^^^^^^^^^
+> 79 |   }, [user?.id, user?.email]);
+     | ^^^^ Could not preserve existing manual memoization
+  80 |
+  81 |   useEffect(() => {
+  82 |     fetchCredits();  react-hooks/preserve-manual-memoization
+   82:5   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\jsnee\supremebeats\app\context\JobsContext.tsx:82:5
+  80 |
+  81 |   useEffect(() => {
+> 82 |     fetchCredits();
+     |     ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  83 |   }, [fetchCredits]);
+  84 |
+  85 |   useEffect(() => {                                                                                                                                      react-hooks/set-state-in-effect
+  130:5   warning  React Hook useCallback has a missing dependency: 'activeStatuses'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         react-hooks/exhaustive-deps
+  217:5   warning  React Hook useCallback has a missing dependency: 'activeStatuses'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         react-hooks/exhaustive-deps
+  293:6   warning  React Hook useCallback has a missing dependency: 'activeStatuses'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         react-hooks/exhaustive-deps
+
+C:\Users\jsnee\supremebeats\app\context\ProjectsContext.tsx
+  153:5  warning  React Hook useCallback has a missing dependency: 'user'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\jsnee\supremebeats\app\creator\[slug]\page.tsx
+  71:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  83:75  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\jsnee\supremebeats\app\dashboard\profile\page.tsx
+  31:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\jsnee\supremebeats\app\dashboard\profile\page.tsx:31:7
+  29 |   useEffect(() => {
+  30 |     if (!user?.id) {
+> 31 |       setProfile(null);
+     |       ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  32 |       setLoading(false);
+  33 |       return;
+  34 |     }  react-hooks/set-state-in-effect
+  64:63  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               @typescript-eslint/no-explicit-any
+
+C:\Users\jsnee\supremebeats\app\dashboard\projects\DeleteProjectButton.tsx
+  10:3  warning  'label' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\jsnee\supremebeats\app\dashboard\projects\VersionExportButton.tsx
+  19:9  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+C:\Users\jsnee\supremebeats\app\dashboard\projects\[id]\GenerateCoverArtSection.tsx
+  41:14  warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+  76:15  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\jsnee\supremebeats\app\dashboard\projects\[id]\page.tsx
+  185:16  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  194:16  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\jsnee\supremebeats\app\dashboard\settings\page.tsx
+    5:8   warning  'MicTierProgress' is defined but never used  @typescript-eslint/no-unused-vars
+   83:39  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+   84:37  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  103:41  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  104:37  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  106:14  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+
+C:\Users\jsnee\supremebeats\app\dashboard\shop\success\page.tsx
+  15:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\jsnee\supremebeats\app\dashboard\shop\success\page.tsx:15:7
+  13 |   useEffect(() => {
+  14 |     if (!sessionId) {
+> 15 |       setStatus("error");
+     |       ^^^^^^^^^ Avoid calling setState() directly within an effect
+  16 |       setMessage("Missing session.");
+  17 |       return;
+  18 |     }  react-hooks/set-state-in-effect
+
+C:\Users\jsnee\supremebeats\app\dashboard\studio\StudioPageContent.tsx
+  33:10  warning  'StudioTimelineWorkspace' is defined but never used  @typescript-eslint/no-unused-vars
+  37:23  warning  'setCurrentTime' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  68:57  warning  'i' is defined but never used                        @typescript-eslint/no-unused-vars
+
+C:\Users\jsnee\supremebeats\app\dashboard\success\page.tsx
+  19:15  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\Users\jsnee\supremebeats\app\dashboard\success\page.tsx:19:15
+  17 |       Array.from({ length: 70 }, (_, i) => ({
+  18 |         id: i,
+> 19 |         left: Math.random() * 100,
+     |               ^^^^^^^^^^^^^ Cannot call impure function
+  20 |         delay: Math.random() * 2,
+  21 |         duration: 2.5 + Math.random() * 1.5,
+  22 |         color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],                           react-hooks/purity
+  20:16  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\Users\jsnee\supremebeats\app\dashboard\success\page.tsx:20:16
+  18 |         id: i,
+  19 |         left: Math.random() * 100,
+> 20 |         delay: Math.random() * 2,
+     |                ^^^^^^^^^^^^^ Cannot call impure function
+  21 |         duration: 2.5 + Math.random() * 1.5,
+  22 |         color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+  23 |         size: 6 + Math.random() * 8,                                   react-hooks/purity
+  21:25  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\Users\jsnee\supremebeats\app\dashboard\success\page.tsx:21:25
+  19 |         left: Math.random() * 100,
+  20 |         delay: Math.random() * 2,
+> 21 |         duration: 2.5 + Math.random() * 1.5,
+     |                         ^^^^^^^^^^^^^ Cannot call impure function
+  22 |         color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+  23 |         size: 6 + Math.random() * 8,
+  24 |         rotation: Math.random() * 360,  react-hooks/purity
+  22:43  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\Users\jsnee\supremebeats\app\dashboard\success\page.tsx:22:43
+  20 |         delay: Math.random() * 2,
+  21 |         duration: 2.5 + Math.random() * 1.5,
+> 22 |         color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+     |                                           ^^^^^^^^^^^^^ Cannot call impure function
+  23 |         size: 6 + Math.random() * 8,
+  24 |         rotation: Math.random() * 360,
+  25 |       })),        react-hooks/purity
+  23:19  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\Users\jsnee\supremebeats\app\dashboard\success\page.tsx:23:19
+  21 |         duration: 2.5 + Math.random() * 1.5,
+  22 |         color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+> 23 |         size: 6 + Math.random() * 8,
+     |                   ^^^^^^^^^^^^^ Cannot call impure function
+  24 |         rotation: Math.random() * 360,
+  25 |       })),
+  26 |     []                                                           react-hooks/purity
+  24:19  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\Users\jsnee\supremebeats\app\dashboard\success\page.tsx:24:19
+  22 |         color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+  23 |         size: 6 + Math.random() * 8,
+> 24 |         rotation: Math.random() * 360,
+     |                   ^^^^^^^^^^^^^ Cannot call impure function
+  25 |       })),
+  26 |     []
+  27 |   );                                                                                                   react-hooks/purity
+  38:31  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\Users\jsnee\supremebeats\app\dashboard\success\page.tsx:38:31
+  36 |             left: `${p.left}%`,
+  37 |             width: p.size,
+> 38 |             height: p.size * (Math.random() > 0.5 ? 1.2 : 0.6),
+     |                               ^^^^^^^^^^^^^ Cannot call impure function
+  39 |             backgroundColor: p.color,
+  40 |             animationDelay: `${p.delay}s`,
+  41 |             animationDuration: `${p.duration}s`,                 react-hooks/purity
+  43:27  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\Users\jsnee\supremebeats\app\dashboard\success\page.tsx:43:27
+  41 |             animationDuration: `${p.duration}s`,
+  42 |             transform: `rotate(${p.rotation}deg)`,
+> 43 |             borderRadius: Math.random() > 0.7 ? "50%" : 2,
+     |                           ^^^^^^^^^^^^^ Cannot call impure function
+  44 |           }}
+  45 |         />
+  46 |       ))}                                                                                 react-hooks/purity
+
+C:\Users\jsnee\supremebeats\app\lib\discoveryFeed.ts
+  90:64  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\jsnee\supremebeats\app\lib\supabaseComments.ts
+  65:78  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\jsnee\supremebeats\app\page.tsx
+    4:8   warning  'Image' is defined but never used         @typescript-eslint/no-unused-vars
+  122:31  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  135:33  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\jsnee\supremebeats\test-connection.js
+  30:17  warning  'authData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\jsnee\supremebeats\utils\supabase\server.ts
+  18:20  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+  27:20  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+Γ£û 76 problems (37 errors, 39 warnings)
+  1 error and 14 warnings potentially fixable with the `--fix` option.
+

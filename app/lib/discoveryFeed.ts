@@ -87,7 +87,7 @@ export async function fetchPublicDiscoveryTracks(): Promise<DiscoveryTrack[]> {
       creatorId: a.user_id,
       creatorName,
       creatorSlug,
-      micTier: normalizeMicTier(profile?.mic_tier, (profile as any)?.is_admin as boolean | null),
+      micTier: normalizeMicTier(profile?.mic_tier, profile?.is_admin ?? null),
       artworkUrl: null,
       audioUrl: a.url,
       plays: 0,

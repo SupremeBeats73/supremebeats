@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { useProjects } from "../context/ProjectsContext";
 import type { ProjectAssetKind, AssetStatus } from "../lib/types";
 
@@ -125,11 +126,13 @@ export default function GenerationCard({
         {isSuccess && latestResultUrl && (isImage || isAudio) && (
           <div className="mt-4 rounded-lg border border-white/10 bg-black/40 p-3 shadow-[0_0_22px_rgba(15,23,42,0.9)] transition-colors group-hover:border-[var(--neon-green)]/40 group-hover:bg-black/60">
             {isImage && (
-              <div className="overflow-hidden rounded-md border border-white/5">
-                <img
+              <div className="relative h-32 overflow-hidden rounded-md border border-white/5">
+                <Image
                   src={latestResultUrl}
                   alt={`${title} result`}
-                  className="h-32 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                  fill
+                  unoptimized
+                  className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                 />
               </div>
             )}
@@ -150,7 +153,6 @@ export default function GenerationCard({
                     <div className="flex h-full items-end justify-between gap-0.5">
                       {Array.from({ length: 42 }).map((_, i) => (
                         <div
-                          // eslint-disable-next-line react/no-array-index-key
                           key={i}
                           className="flex-1 rounded-sm bg-[var(--neon-green)]/40 opacity-80"
                           style={{

@@ -36,6 +36,18 @@ function extractSignedObjectPath(url: string): string | null {
   }
 }
 
+type CreatorProfileRow = {
+  id: string;
+  display_name: string | null;
+  bio: string | null;
+  mic_tier: string | null;
+  updated_at: string | null;
+  avatar_url: string | null;
+  banner_url: string | null;
+  profile_prefs: unknown;
+  is_admin: boolean | null;
+};
+
 async function maybeRefreshSignedUrl(raw: string | null): Promise<string | null> {
   if (!raw) return null;
   const path = extractSignedObjectPath(raw);
@@ -68,7 +80,7 @@ export default async function PublicCreatorPage({
     .maybeSingle();
 
   const { data: byDisplayName } = byCustomSlug
-    ? { data: null as any }
+    ? { data: null as CreatorProfileRow | null }
     : await supabase
         .from("profiles")
         .select("id, display_name, bio, mic_tier, updated_at, avatar_url, banner_url, profile_prefs, is_admin")
@@ -76,11 +88,11 @@ export default async function PublicCreatorPage({
         .limit(1)
         .maybeSingle();
 
-  const row = byCustomSlug ?? byDisplayName;
+  const row = (byCustomSlug ?? byDisplayName) as CreatorProfileRow | null;
   if (!row?.id) notFound();
 
   const username = (row.display_name as string) || slugCandidate || "creator";
-  const micTier = normalizeMicTier(row.mic_tier as string | null, (row as any).is_admin as boolean | null);
+  const micTier = normalizeMicTier(row.mic_tier, row.is_admin);
   const profileImageUrl = await maybeRefreshSignedUrl((row.avatar_url as string) ?? null);
   const bannerImageUrl = await maybeRefreshSignedUrl((row.banner_url as string) ?? null);
   const joinDate = row.updated_at

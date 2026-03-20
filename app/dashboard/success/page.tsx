@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
@@ -11,20 +11,51 @@ const CONFETTI_COLORS = [
   "#fafafa", "#e2e8f0",
 ];
 
+type ConfettiParticle = {
+  id: number;
+  left: number;
+  delay: number;
+  duration: number;
+  color: string;
+  size: number;
+  rotation: number;
+  heightScale: number;
+  borderRadius: number | string;
+};
+
 function Confetti() {
-  const particles = useMemo(
-    () =>
-      Array.from({ length: 70 }, (_, i) => ({
+  const [particles, setParticles] = useState<ConfettiParticle[]>([]);
+
+  useEffect(() => {
+    // Generate randomized confetti only after mount to keep render deterministic.
+    const next = Array.from({ length: 70 }, (_, i) => {
+      const left = Math.random() * 100;
+      const delay = Math.random() * 2;
+      const duration = 2.5 + Math.random() * 1.5;
+      const color = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
+      const size = 6 + Math.random() * 8;
+      const rotation = Math.random() * 360;
+      const heightScale = Math.random() > 0.5 ? 1.2 : 0.6;
+      const borderRadius = Math.random() > 0.7 ? "50%" : 2;
+
+      return {
         id: i,
-        left: Math.random() * 100,
-        delay: Math.random() * 2,
-        duration: 2.5 + Math.random() * 1.5,
-        color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
-        size: 6 + Math.random() * 8,
-        rotation: Math.random() * 360,
-      })),
-    []
-  );
+        left,
+        delay,
+        duration,
+        color,
+        size,
+        rotation,
+        heightScale,
+        borderRadius,
+      };
+    });
+    // Avoid synchronous setState directly within effect execution.
+    const id = window.setTimeout(() => {
+      setParticles(next);
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, []);
 
   return (
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
@@ -35,12 +66,12 @@ function Confetti() {
           style={{
             left: `${p.left}%`,
             width: p.size,
-            height: p.size * (Math.random() > 0.5 ? 1.2 : 0.6),
+            height: p.size * p.heightScale,
             backgroundColor: p.color,
             animationDelay: `${p.delay}s`,
             animationDuration: `${p.duration}s`,
             transform: `rotate(${p.rotation}deg)`,
-            borderRadius: Math.random() > 0.7 ? "50%" : 2,
+            borderRadius: p.borderRadius,
           }}
         />
       ))}

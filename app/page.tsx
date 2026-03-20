@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import SectionWrapper from "./components/SectionWrapper";
@@ -76,6 +75,23 @@ type CreatorCardData = {
   engagement: string;
 };
 
+type HomeTrackRow = {
+  title: string | null;
+  creator_name: string | null;
+  plays: number | string | null;
+  rating: number | null;
+  mic_badge: string | null;
+  engagement: string | null;
+};
+
+type HomeProfileRow = {
+  display_name: string | null;
+  plays: number | string | null;
+  rating: number | null;
+  mic_tier: string | null;
+  engagement: string | null;
+};
+
 type TrackCardData = {
   title: string;
   creator: string;
@@ -118,8 +134,9 @@ export default function Home() {
         ]);
 
         if (!tracksError && trackRows && trackRows.length > 0 && isMounted) {
+          const safeRows = trackRows as unknown as HomeTrackRow[];
           setTracks(
-            trackRows.map((t: any) => ({
+            safeRows.map((t) => ({
               title: t.title ?? "Untitled track",
               creator: t.creator_name ?? "Unknown creator",
               plays: String(t.plays ?? "0"),
@@ -131,8 +148,9 @@ export default function Home() {
         }
 
         if (!profilesError && profileRows && profileRows.length > 0 && isMounted) {
+          const safeProfiles = profileRows as unknown as HomeProfileRow[];
           setCreators(
-            profileRows.map((p: any) => ({
+            safeProfiles.map((p) => ({
               name: p.display_name ?? "Unknown creator",
               plays: String(p.plays ?? "0"),
               rating: Number(p.rating ?? 0),

@@ -122,7 +122,9 @@ export default function DashboardShell({
   }, [loading, user, router]);
 
   useEffect(() => {
-    setMenuOpen(false);
+    // Avoid synchronous setState during effect execution.
+    const id = window.setTimeout(() => setMenuOpen(false), 0);
+    return () => window.clearTimeout(id);
   }, [pathname]);
 
   if (loading) {

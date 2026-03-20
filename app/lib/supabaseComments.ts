@@ -62,7 +62,7 @@ export async function fetchCommentsByAssetId(assetId: string): Promise<CommentWi
     body: r.body,
     createdAt: r.created_at,
     displayName: byId[r.user_id]?.display_name ?? "Anonymous",
-    micTier: normalizeMicTier(byId[r.user_id]?.mic_tier, (byId[r.user_id] as any)?.is_admin as boolean | null),
+    micTier: normalizeMicTier(byId[r.user_id]?.mic_tier, byId[r.user_id]?.is_admin ?? null),
   }));
 }
 

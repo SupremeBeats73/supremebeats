@@ -14,9 +14,12 @@ export default function CreditCounter() {
 
   useEffect(() => {
     if (!user?.id) {
-      setCredits(null);
-      setMicTier(null);
-      return;
+      // Avoid synchronous setState inside effect body.
+      const id = window.setTimeout(() => {
+        setCredits(null);
+        setMicTier(null);
+      }, 0);
+      return () => window.clearTimeout(id);
     }
 
     let cancelled = false;

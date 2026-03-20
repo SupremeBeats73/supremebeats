@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/utils/supabase/server";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.supremebeatsstudio.com";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -39,7 +39,14 @@ export async function POST() {
   }
 
   const stripe = new Stripe(secretKey);
-  const returnUrl = `${siteUrl.replace(/\/$/, "")}/dashboard/billing`;
+  const baseUrl = siteUrl ?? request.headers.get("origin");
+  if (!baseUrl) {
+    return NextResponse.json(
+      { error: "Server misconfigured: NEXT_PUBLIC_SITE_URL is not set" },
+      { status: 500 }
+    );
+  }
+  const returnUrl = `${baseUrl.replace(/\/$/, "")}/dashboard/billing`;
   const session = await stripe.billingPortal.sessions.create({
     customer: customerId,
     return_url: returnUrl,

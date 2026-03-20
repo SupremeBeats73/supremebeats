@@ -14,7 +14,6 @@ const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABAS
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  // eslint-disable-next-line no-console
   console.warn(
     "[api/stems] SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is not set. Route will return 500 until configured."
   );
@@ -116,7 +115,6 @@ export async function POST(req: Request) {
       if (!url || typeof url !== "string") continue;
       const response = await fetch(url);
       if (!response.ok) {
-        // eslint-disable-next-line no-console
         console.error("[api/stems] failed to fetch stem", name, response.status);
         continue;
       }
@@ -127,7 +125,6 @@ export async function POST(req: Request) {
         .upload(filePath, buffer, { contentType: "audio/wav", upsert: true });
 
       if (uploadError) {
-        // eslint-disable-next-line no-console
         console.error("[api/stems] upload error", name, uploadError);
         continue;
       }
@@ -136,7 +133,6 @@ export async function POST(req: Request) {
         .from("generated-audio")
         .createSignedUrl(filePath, 3600);
       if (signedError || !signed?.signedUrl) {
-        // eslint-disable-next-line no-console
         console.error("[api/stems] signed url error", name, signedError);
         continue;
       }
@@ -158,14 +154,12 @@ export async function POST(req: Request) {
       .eq("user_id", user.id);
 
     if (dbError) {
-      // eslint-disable-next-line no-console
       console.error("[api/stems] db update error", dbError);
       // Still return stems so the client can use them
     }
 
     return NextResponse.json({ stems: uploadedStems });
   } catch (error) {
-    // eslint-disable-next-line no-console
     console.error("STEM_SPLIT_ERROR:", error);
     const message = error instanceof Error ? error.message : "Stem separation failed";
     return NextResponse.json({ error: message }, { status: 500 });

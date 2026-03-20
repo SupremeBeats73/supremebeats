@@ -164,7 +164,6 @@ export async function DELETE(request: Request) {
     // In that case, treat deletion as best-effort and continue with other related tables.
     const msg = deleteVersionsRes.error.message ?? String(deleteVersionsRes.error);
     if (msg.includes("Could not find the table") && msg.includes("project_versions")) {
-      // eslint-disable-next-line no-console
       console.warn(
         "[projects/delete] Skipping project_versions delete (table not found in schema cache)"
       );

@@ -2,12 +2,18 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
-import MicTierProgress from "../../components/MicTierProgress";
 import CustomSelect from "../../components/CustomSelect";
 import { normalizeUsername } from "../../lib/usernameUtils";
 import { supabase } from "../../lib/supabaseClient";
 import { resolveAssetsSignedUrl } from "../../lib/storageSignedUrls";
 import type { DashboardCustomization, PublicProfileCustomization } from "../../lib/types";
+
+type ProfilesPrefsRow = {
+  avatar_url: string | null;
+  banner_url: string | null;
+  dashboard_prefs: DashboardCustomization | null;
+  profile_prefs: PublicProfileCustomization | null;
+};
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -74,14 +80,13 @@ export default function SettingsPage() {
         .eq("id", user.id)
         .maybeSingle()
     ).then(({ data }) => {
-      void Promise.resolve(resolveAssetsSignedUrl(supabase, (data?.avatar_url as string) ?? null)).then(
-        (u) => setAvatarUrl(u)
-      );
-      void Promise.resolve(resolveAssetsSignedUrl(supabase, (data?.banner_url as string) ?? null)).then(
-        (u) => setBannerUrl(u)
-      );
-      const dashboardPrefs = (data as any)?.dashboard_prefs ?? null;
-      const profilePrefs = (data as any)?.profile_prefs ?? null;
+      const row = data as unknown as ProfilesPrefsRow | null;
+
+      void Promise.resolve(resolveAssetsSignedUrl(supabase, row?.avatar_url ?? null)).then((u) => setAvatarUrl(u));
+      void Promise.resolve(resolveAssetsSignedUrl(supabase, row?.banner_url ?? null)).then((u) => setBannerUrl(u));
+
+      const dashboardPrefs = row?.dashboard_prefs ?? null;
+      const profilePrefs = row?.profile_prefs ?? null;
       if (dashboardPrefs && typeof dashboardPrefs === "object") {
         setDashboard((prev) => ({ ...prev, ...(dashboardPrefs as Partial<DashboardCustomization>) }));
       }
@@ -100,10 +105,10 @@ export default function SettingsPage() {
       const { error } = await supabase
         .from("profiles")
         .update({
-          dashboard_prefs: dashboard as any,
-          profile_prefs: profile as any,
+          dashboard_prefs: dashboard,
+          profile_prefs: profile,
           updated_at: new Date().toISOString(),
-        } as any)
+        })
         .eq("id", user.id);
       if (error) {
         setPrefsError(error.message || "Could not save settings");

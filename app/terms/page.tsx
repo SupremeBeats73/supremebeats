@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.supremebeatsstudio.com";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
 const termsUrl = `${siteUrl.replace(/\/$/, "")}/terms`;
 
 export const metadata: Metadata = {

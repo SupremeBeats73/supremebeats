@@ -20,10 +20,10 @@ const inter = Inter({
   weight: ["600", "700", "800"],
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.supremebeatsstudio.com";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  ...(siteUrl ? { metadataBase: new URL(siteUrl) } : {}),
   title: {
     default: "SupremeBeats Studio",
     template: "%s | SupremeBeats Studio",
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "SupremeBeats Studio",
     description: "Create, edit, and deploy beats in seconds.",
-    url: siteUrl,
+    ...(siteUrl ? { url: siteUrl } : {}),
     siteName: "SupremeBeats Studio",
     locale: "en_US",
     type: "website",

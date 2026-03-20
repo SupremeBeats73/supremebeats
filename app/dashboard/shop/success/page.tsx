@@ -12,9 +12,12 @@ function SuccessContent() {
 
   useEffect(() => {
     if (!sessionId) {
-      setStatus("error");
-      setMessage("Missing session.");
-      return;
+      // Avoid synchronous setState during effect render.
+      const id = window.setTimeout(() => {
+        setStatus("error");
+        setMessage("Missing session.");
+      }, 0);
+      return () => window.clearTimeout(id);
     }
     fetch(`/api/checkout/success?session_id=${encodeURIComponent(sessionId)}`)
       .then((res) => res.json())

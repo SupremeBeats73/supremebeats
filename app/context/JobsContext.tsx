@@ -17,6 +17,8 @@ import { isEliteUser } from "../lib/admin";
 /** Display value for Elite (unlimited) users */
 const ELITE_DISPLAY_CREDITS = 999999;
 
+const ACTIVE_STATUSES: JobStatus[] = ["queued", "processing"];
+
 function generateJobId() {
   return `job_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
@@ -76,10 +78,14 @@ export function JobsProvider({ children }: { children: ReactNode }) {
         : credits
     );
     setCreditsLoading(false);
-  }, [user?.id, user?.email]);
+  }, [user]);
 
   useEffect(() => {
-    fetchCredits();
+    // Defer execution so we don't synchronously trigger cascading renders.
+    const id = window.setTimeout(() => {
+      fetchCredits();
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [fetchCredits]);
 
   useEffect(() => {
@@ -113,8 +119,6 @@ export function JobsProvider({ children }: { children: ReactNode }) {
     };
   }, [user?.id, user?.email]);
 
-  const activeStatuses: JobStatus[] = ["queued", "processing"];
-
   const getJobsForUser = useCallback(
     (userId: string) => jobs.filter((j) => j.user_id === userId),
     [jobs]
@@ -125,7 +129,7 @@ export function JobsProvider({ children }: { children: ReactNode }) {
   const concurrentCount = useCallback(
     (userId: string) =>
       jobs.filter(
-        (j) => j.user_id === userId && activeStatuses.includes(j.status)
+        (j) => j.user_id === userId && ACTIVE_STATUSES.includes(j.status)
       ).length,
     [jobs]
   );
@@ -153,7 +157,7 @@ export function JobsProvider({ children }: { children: ReactNode }) {
           (j) =>
             j.user_id === userId &&
             j.job_type === "automation_batch" &&
-            activeStatuses.includes(j.status)
+            ACTIVE_STATUSES.includes(j.status)
         );
         if (automationRunning) {
           return { success: false, error: "Max 1 automation batch per user" };
@@ -165,7 +169,7 @@ export function JobsProvider({ children }: { children: ReactNode }) {
           j.user_id === userId &&
           j.project_id === projectId &&
           j.job_type === jobType &&
-          activeStatuses.includes(j.status)
+          ACTIVE_STATUSES.includes(j.status)
       );
       if (isDuplicate) {
         return { success: false, error: "Duplicate job (same project and type already queued or processing)" };
@@ -265,7 +269,7 @@ export function JobsProvider({ children }: { children: ReactNode }) {
     setJobs((prev) => {
       const job = prev.find((j) => j.job_id === jobId);
       if (!job) return prev;
-      if (activeStatuses.includes(job.status)) {
+      if (ACTIVE_STATUSES.includes(job.status)) {
         fetch("/api/credits/refund", {
           method: "POST",
           headers: { "Content-Type": "application/json" },

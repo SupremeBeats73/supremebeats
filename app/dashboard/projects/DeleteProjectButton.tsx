@@ -58,7 +58,7 @@ export default function DeleteProjectButton({
 
       <ConfirmActionModal
         open={open}
-        title="Delete project"
+        title={label}
         message="Are you sure you want to delete this project? This cannot be undone."
         confirmLabel="Delete"
         variant="danger"

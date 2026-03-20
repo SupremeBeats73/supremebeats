@@ -182,7 +182,7 @@ async function getProjectData(projectId: string) {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false }) as unknown as Promise<{
         data: DbAsset[] | null;
-        error: any;
+        error: unknown;
       }>,
       supabase
         .from("project_versions")
@@ -191,7 +191,7 @@ async function getProjectData(projectId: string) {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false }) as unknown as Promise<{
         data: DbVersion[] | null;
-        error: any;
+        error: unknown;
       }>,
     ]);
 

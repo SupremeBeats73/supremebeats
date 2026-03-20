@@ -31,6 +31,7 @@ export default function VisualEngineSection({
   thumbnailGenerating = false,
   coverGenerating = false,
 }: VisualEngineSectionProps) {
+  void projectId;
   const [selectedStyle, setSelectedStyle] = useState<VisualVideoStyle>("youtube_16_9");
   const [thumbnailText, setThumbnailText] = useState("");
   const [coverText, setCoverText] = useState("");

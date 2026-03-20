@@ -27,7 +27,7 @@ async function testConnection() {
   console.log("🚀 Testing Supabase connection...");
 
   // 1. Test Auth Connection
-  const { data: authData, error: authError } = await supabase.auth.getSession();
+  const { error: authError } = await supabase.auth.getSession();
   if (authError) {
     console.error("❌ Auth Error:", authError.message);
   } else {

@@ -6,8 +6,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2023-10-16" as Stripe.LatestApiVersion,
 });
 
-const defaultBaseUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.supremebeatsstudio.com";
+const defaultBaseUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
 export async function createCheckoutSession(
   priceId: string,
@@ -18,6 +17,9 @@ export async function createCheckoutSession(
     typeof returnBaseUrl === "string" && /^https?:\/\//.test(returnBaseUrl)
       ? returnBaseUrl.replace(/\/$/, "")
       : defaultBaseUrl;
+  if (!baseUrl) {
+    throw new Error("Server misconfigured: NEXT_PUBLIC_SITE_URL is not set");
+  }
 
   try {
     const isSubscription =

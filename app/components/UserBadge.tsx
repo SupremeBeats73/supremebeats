@@ -7,6 +7,11 @@ import { isEliteUser } from "../lib/admin";
 
 const BADGE_SIZE = 18;
 
+type ProfileMicRow = {
+  mic_tier: string | null;
+  is_admin: boolean | null;
+};
+
 interface UserBadgeProps {
   userId: string;
   /** When provided (e.g. from feed JOIN), skip fetch and render instantly. */
@@ -20,10 +25,9 @@ export default function UserBadge({ userId, micTier: micTierProp, userEmail }: U
   const [fetchedIsAdmin, setFetchedIsAdmin] = useState<boolean>(false);
 
   useEffect(() => {
-    if (micTierProp !== undefined || !userId) {
-      setFetchedTier(null);
-      return;
-    }
+    // If mic tier is provided (e.g. JOIN results), skip fetching entirely.
+    // This avoids unnecessary state updates during effect execution.
+    if (micTierProp !== undefined || !userId) return;
     let cancelled = false;
     (async () => {
       const { data } = await supabase
@@ -32,8 +36,9 @@ export default function UserBadge({ userId, micTier: micTierProp, userEmail }: U
         .eq("id", userId)
         .maybeSingle();
       if (cancelled) return;
-      setFetchedTier(data?.mic_tier ?? null);
-      setFetchedIsAdmin(Boolean((data as any)?.is_admin));
+      const row = data as unknown as ProfileMicRow | null;
+      setFetchedTier(row?.mic_tier ?? null);
+      setFetchedIsAdmin(Boolean(row?.is_admin));
     })();
     return () => {
       cancelled = true;

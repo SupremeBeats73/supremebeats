@@ -5,7 +5,7 @@ import { JOB_LIMITS } from "../../lib/jobConfig";
 import type { Job, JobStatus } from "../../lib/types";
 
 export default function AdminQueuePage() {
-  const { jobs, getJobs, retryJob, cancelJob, automationPaused, setAutomationPaused } = useJobs();
+  const { getJobs, retryJob, cancelJob, automationPaused, setAutomationPaused } = useJobs();
   const allJobs = getJobs();
   const active: Job[] = allJobs.filter((j) =>
     ["queued", "processing"].includes(j.status)

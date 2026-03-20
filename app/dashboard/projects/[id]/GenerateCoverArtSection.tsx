@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Image from "next/image";
 
 type CoverArtAsset = {
   id: string;
@@ -38,7 +39,7 @@ export default function GenerateCoverArtSection({
       }
       setResult({ asset: data.asset, url: data.url ?? data.asset?.url ?? null });
       router.refresh();
-    } catch (e) {
+    } catch {
       setError("Request failed");
     } finally {
       setLoading(false);
@@ -73,9 +74,12 @@ export default function GenerateCoverArtSection({
               rel="noopener noreferrer"
               className="block overflow-hidden rounded-lg border border-white/10 bg-white/5"
             >
-              <img
+              <Image
                 src={displayUrl}
                 alt={result.asset?.label ?? "Cover art"}
+                width={160}
+                height={160}
+                unoptimized
                 className="h-32 w-32 object-cover sm:h-40 sm:w-40"
               />
             </a>

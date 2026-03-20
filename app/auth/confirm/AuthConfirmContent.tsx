@@ -89,6 +89,10 @@ export default function AuthConfirmContent() {
     }
 
     confirmAndRedirect();
+
+    return () => {
+      mounted = false;
+    };
   }, [router]);
 
   return (
