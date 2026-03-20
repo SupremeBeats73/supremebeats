@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useProjects } from "../context/ProjectsContext";
 import { useJobs } from "../context/JobsContext";
@@ -32,7 +32,10 @@ export default function StudioWorkspace({
 }: StudioWorkspaceProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const wavesurferRefs = useRef<WaveSurferLike[]>([]);
+  const initInFlightRef = useRef<Promise<void> | null>(null);
   const [transportState, setTransportState] = useState<TransportState>("stopped");
+  const [waveReady, setWaveReady] = useState(false);
+  const [isWaveLoading, setIsWaveLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSplitting, setIsSplitting] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -45,34 +48,48 @@ export default function StudioWorkspace({
   const { addAsset, updateAssetStatus } = useProjects();
   const { submitJob, completeJob, failJob, creditsRemaining, creditsLoading } = useJobs();
 
-  // Lazy-load wavesurfer.js on the client only.
-  useEffect(() => {
-    let cancelled = false;
-    async function setup() {
-      if (!containerRef.current) return;
-      if (wavesurferRefs.current.length > 0) return;
+  const trackUrlsKey = useMemo(
+    () => tracks.map((t) => t.url).join("|"),
+    [tracks]
+  );
 
+  // Destroy WaveSurfer instances only when the component unmounts.
+  useEffect(() => {
+    return () => {
+      wavesurferRefs.current.forEach((ws) => {
+        try {
+          ws.destroy();
+        } catch {
+          // ignore
+        }
+      });
+      wavesurferRefs.current = [];
+      setWaveReady(false);
+      setIsWaveLoading(false);
+    };
+  }, []);
+
+  async function ensureWaveSurferInitialized(initialTracks: NonNullable<StudioWorkspaceProps["tracks"]>) {
+    if (wavesurferRefs.current.length > 0) return;
+    if (!containerRef.current) return;
+    if (initInFlightRef.current) {
+      await initInFlightRef.current;
+      return;
+    }
+
+    const run = async () => {
       const WaveSurfer = (await import("wavesurfer.js")).default;
 
-      // Create one WaveSurfer instance per track to mimic a multi-track timeline.
-      const root = containerRef.current;
+      const root = containerRef.current!;
       const instances: WaveSurferLike[] = [];
 
-      const sources = tracks.length
-        ? tracks
-        : [
-            {
-              id: "main",
-              label: "Main Mix",
-              url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-            },
-          ];
-
-      sources.forEach((track) => {
+      // Create one WaveSurfer instance per track to mimic a multi-track timeline.
+      initialTracks.forEach((track) => {
         const lane = document.createElement("div");
         lane.className =
-          "mb-2 h-16 rounded-lg border border-white/5 bg-black/20 backdrop-blur-sm overflow-hidden"; // visual lane
+          "mb-2 h-16 rounded-lg border border-white/5 bg-black/20 backdrop-blur-sm overflow-hidden";
         root.appendChild(lane);
+
         const ws = WaveSurfer.create({
           container: lane,
           waveColor: "#6E2CF2",
@@ -83,37 +100,83 @@ export default function StudioWorkspace({
           barGap: 1,
           height: 64,
         }) as unknown as WaveSurferLike;
+
+        // WaveSurfer's event emitter isn't part of our minimal `WaveSurferLike` type.
+        const wsAny = ws as unknown as { on?: (event: string, cb: () => void) => void };
+        wsAny.on?.("loading", () => setIsWaveLoading(true));
+        wsAny.on?.("ready", () => setIsWaveLoading(false));
+        wsAny.on?.("error", () => setIsWaveLoading(false));
+        wsAny.on?.("finish", () => setTransportState("stopped"));
+
         ws.load(track.url);
         instances.push(ws);
       });
 
-      if (!cancelled) {
-        wavesurferRefs.current = instances;
-      } else {
-        instances.forEach((ws) => ws.destroy());
-      }
+      wavesurferRefs.current = instances;
+      setWaveReady(instances.length > 0);
+      setIsWaveLoading(false);
+    };
+
+    initInFlightRef.current = run();
+    try {
+      await initInFlightRef.current;
+    } finally {
+      initInFlightRef.current = null;
+    }
+  }
+
+  function isValidSignedUrl(url: string): boolean {
+    const s = url.trim();
+    // Signed URLs from Supabase are absolute. Reject empty/non-http values.
+    return s.startsWith("http://") || s.startsWith("https://");
+  }
+
+  async function loadAudioUrl(url: string) {
+    const trimmed = url.trim();
+    if (!isValidSignedUrl(trimmed)) {
+      setError("Invalid audio URL. Please regenerate and try again.");
+      return;
     }
 
-    setup();
+    if (wavesurferRefs.current.length === 0) {
+      // Initialize exactly once using the first known URL.
+      await ensureWaveSurferInitialized([
+        { id: "main", label: "Main Mix", url: trimmed },
+      ]);
+    }
 
-    return () => {
-      cancelled = true;
-      wavesurferRefs.current.forEach((ws) => ws.destroy());
-      wavesurferRefs.current = [];
-    };
-  }, [tracks]);
+    if (wavesurferRefs.current.length === 0) return;
+
+    // Loading state while WaveSurfer fetches the signed audio.
+    setIsWaveLoading(true);
+    wavesurferRefs.current.forEach((ws) => ws.load(trimmed));
+  }
+
+  // Initialize WaveSurfer when we first receive at least one real URL.
+  useEffect(() => {
+    if (wavesurferRefs.current.length > 0) return;
+    if (!containerRef.current) return;
+    if (!tracks?.length) return;
+    const valid = tracks.every((t) => t?.url && isValidSignedUrl(t.url));
+    if (!valid) return;
+    void ensureWaveSurferInitialized(tracks);
+    // Re-run only if the set of URLs changes; never destroy on these changes.
+  }, [trackUrlsKey, tracks]);
 
   const handlePlay = () => {
+    if (isWaveLoading || !waveReady) return;
     wavesurferRefs.current.forEach((ws) => ws.play());
     setTransportState("playing");
   };
 
   const handlePause = () => {
+    if (isWaveLoading || !waveReady) return;
     wavesurferRefs.current.forEach((ws) => ws.pause());
     setTransportState("paused");
   };
 
   const handleStop = () => {
+    if (!waveReady) return;
     wavesurferRefs.current.forEach((ws) => {
       ws.pause();
       ws.seekTo(0);
@@ -205,7 +268,7 @@ export default function StudioWorkspace({
       completeJob(jobId);
 
       const url = data.url as string;
-      wavesurferRefs.current.forEach((ws) => ws.load(url));
+      await loadAudioUrl(url);
       onGenerated?.({ url, jobId });
     } catch (e) {
       clear();
@@ -320,6 +383,8 @@ export default function StudioWorkspace({
             <button
               type="button"
               onClick={handlePlay}
+              disabled={isWaveLoading || !waveReady}
+              aria-disabled={isWaveLoading || !waveReady}
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#6E2CF2] text-sm font-semibold text-white shadow-[0_0_18px_rgba(110,44,242,0.8)] transition hover:bg-[#8242ff]"
             >
               ▶
@@ -327,6 +392,8 @@ export default function StudioWorkspace({
             <button
               type="button"
               onClick={handlePause}
+              disabled={isWaveLoading || !waveReady}
+              aria-disabled={isWaveLoading || !waveReady}
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-black/40 text-xs text-white/80 transition hover:bg-white/10"
             >
               ‖
@@ -334,6 +401,7 @@ export default function StudioWorkspace({
             <button
               type="button"
               onClick={handleStop}
+              disabled={!waveReady}
               className="flex h-11 min-w-[44px] items-center justify-center rounded-full border border-white/20 bg-black/40 px-3 text-xs font-medium text-white/80 transition hover:bg-white/10"
             >
               Stop
