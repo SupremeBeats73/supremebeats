@@ -1,11 +1,17 @@
+import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
-const REPLICATE_MUSICGEN_VERSION =
-  "b05b1dff1d8c6dc63d14b0cdb42135378dcb87f6373b0d3d341ede46e59e2b38";
-const REPLICATE_API_BASE = "https://api.replicate.com/v1";
+/** MiniMax Music 1.5 on Replicate. */
+const REPLICATE_MINIMAX_MUSIC_PREDICTIONS =
+  "https://api.replicate.com/v1/models/minimax/music-1.5/predictions";
 const POLL_INTERVAL_MS = 2000;
-const POLL_MAX_WAIT_MS = 120_000; // 2 min
+const POLL_MAX_WAIT_MS = 300_000; // 5 min — async music jobs
+
+const MIN_PROMPT = 10;
+const MAX_PROMPT = 300;
+const MIN_LYRICS = 10;
+const MAX_LYRICS = 600;
 
 type ProjectRow = {
   id: string;
@@ -14,30 +20,121 @@ type ProjectRow = {
   genre: string;
   bpm: number;
   mood: string;
+  key: string;
   prompt: string | null;
   duration: number;
+  lyrics: string | null;
+  vocal_style: string | null;
+  instruments: unknown;
 };
 
 type ProjectVersionInsertRow = {
+  id: string;
   project_id: string;
   user_id: string;
   label: string | null;
-  status: "success";
+  status: string;
   file_path: string;
-  audio_url: null;
-  asset_type: "generated";
+  audio_url: string | null;
+  asset_type: string;
 };
+
+function asStringArray(v: unknown): string[] {
+  if (Array.isArray(v)) {
+    return v.filter((x): x is string => typeof x === "string");
+  }
+  return [];
+}
+
+function ensureCharRange(text: string, min: number, max: number, filler: string): string {
+  let s = text.trim().replace(/\s+/gim, " ");
+  if (s.length > max) {
+    s = s.slice(0, max);
+  }
+  if (s.length < min) {
+    const pad = `${filler} ${s}`.trim();
+    s = pad.slice(0, max);
+  }
+  while (s.length < min) {
+    s = `${s}.`;
+  }
+  return s.slice(0, max);
+}
+
+function buildMusicPrompt(row: ProjectRow, kind: "beat" | "full_song"): string {
+  const parts = [
+    kind === "beat" ? "Instrumental beat" : "Full song",
+    row.genre?.trim() && `Genre: ${row.genre.trim()}`,
+    row.mood?.trim() && `Mood: ${row.mood.trim()}`,
+    Number.isFinite(row.bpm) && row.bpm > 0 && `${row.bpm} BPM`,
+    row.key?.trim() && `Key: ${row.key.trim()}`,
+    row.vocal_style?.trim() && `Vocal style: ${row.vocal_style.trim()}`,
+    row.prompt?.trim() && `Direction: ${row.prompt.trim()}`,
+  ].filter(Boolean) as string[];
+  const inst = asStringArray(row.instruments);
+  if (inst.length > 0) {
+    parts.push(`Instruments: ${inst.slice(0, 12).join(", ")}`);
+  }
+  const raw = parts.join(". ");
+  return ensureCharRange(
+    raw || "Cinematic modern production",
+    MIN_PROMPT,
+    MAX_PROMPT,
+    "High quality mix, wide stereo, punchy drums"
+  );
+}
+
+function buildLyrics(row: ProjectRow, kind: "beat" | "full_song"): string {
+  const existing = row.lyrics?.trim() ?? "";
+  if (existing.length >= MIN_LYRICS) {
+    return ensureCharRange(existing, MIN_LYRICS, MAX_LYRICS, "[verse] Hold the line.");
+  }
+  const fallback =
+    kind === "beat"
+      ? `[intro]
+Feel the pocket, night is young.
+[verse]
+808s hit low, hats shimmer gold.
+[chorus]
+We ride the rhythm, never fold.
+[outro]
+Let it ride.`
+      : `[intro]
+Lights up, we own the sky tonight.
+[verse]
+Every bar a spark, every note upright.
+[chorus]
+This is our anthem, burning bright.
+[bridge]
+Hold your breath and jump with me.
+[outro]
+Sing it loud until dawn.`;
+  return ensureCharRange(fallback, MIN_LYRICS, MAX_LYRICS, "[verse] La la la.");
+}
+
+function predictionOutputToUrl(output: unknown): string | null {
+  if (typeof output === "string" && output.startsWith("http")) return output;
+  if (Array.isArray(output) && typeof output[0] === "string" && output[0].startsWith("http")) {
+    return output[0];
+  }
+  if (
+    output &&
+    typeof output === "object" &&
+    "url" in output &&
+    typeof (output as { url: unknown }).url === "string"
+  ) {
+    const u = (output as { url: string }).url;
+    if (u.startsWith("http")) return u;
+  }
+  return null;
+}
 
 /**
  * POST /api/generate/music
- * Body: { projectId: string, kind: "beat" | "full_song", assetId: string }
- * - Validates auth and project ownership.
- * - Assumes credits were already checked + deducted by the caller (submitJob → /api/credits/deduct).
- * - Writes a generation_jobs row (queued → running → success/failed) when jobId is provided.
- * - Loads project (prompt, genre, bpm, mood), calls Replicate MusicGen,
- *   downloads audio, uploads to Supabase Storage, updates project_asset,
- *   and creates a project_versions row pointing at the stored audio.
- * - If REPLICATE_API_TOKEN is not set, returns 501.
+ * Body: { projectId: string, kind: "beat" | "full_song", assetId: string, jobId?, jobType? }
+ * Uses Replicate MiniMax Music 1.5 with project-backed prompt + lyrics, polls until done,
+ * uploads to generated-audio/{user_id}/{project_id}/{version_id}.mp3, inserts project_versions,
+ * marks generation_jobs as completed, returns signed audio URL for WaveSurfer.
  */
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -84,7 +181,9 @@ export async function POST(request: Request) {
 
   const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select("id, user_id, name, genre, bpm, mood, prompt, duration")
+    .select(
+      "id, user_id, name, genre, bpm, mood, key, prompt, duration, lyrics, vocal_style, instruments"
+    )
     .eq("id", projectId)
     .eq("user_id", user.id)
     .single();
@@ -97,14 +196,13 @@ export async function POST(request: Request) {
   }
 
   const row = project as unknown as ProjectRow;
-  const prompt = [row.prompt, row.genre, row.bpm ? `${row.bpm} BPM` : "", row.mood]
-    .filter(Boolean)
-    .join(". ") || "Instrumental music";
-  const durationSec = kind === "beat" ? 20 : Math.min(30, Math.max(8, row.duration || 30));
+  const musicPrompt = buildMusicPrompt(row, kind);
+  const lyrics = buildLyrics(row, kind);
 
   const nowIso = new Date().toISOString();
-
   const hasJob = !!jobId && !!jobType;
+  const versionId = randomUUID();
+  const storagePath = `${user.id}/${projectId}/${versionId}.mp3`;
 
   const updateJob = async (fields: Partial<{
     status: string;
@@ -131,8 +229,9 @@ export async function POST(request: Request) {
         status: "queued",
         input_json: {
           kind,
-          prompt,
-          duration: durationSec,
+          model: "minimax/music-1.5",
+          prompt: musicPrompt,
+          lyrics,
         },
         created_at: nowIso,
         updated_at: nowIso,
@@ -150,27 +249,25 @@ export async function POST(request: Request) {
     await updateJob({ status: "failed", error_message: errorMessage });
   };
 
-  // Move job to running right before calling the provider.
   if (hasJob) {
     await updateJob({ status: "running" });
   }
 
-  let predictionId: string;
-  let pollUrl: string;
+  let pollUrl = "";
+  let predictionId = "";
+
   try {
-    const createRes = await fetch(`${REPLICATE_API_BASE}/predictions`, {
+    const createRes = await fetch(REPLICATE_MINIMAX_MUSIC_PREDICTIONS, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        version: REPLICATE_MUSICGEN_VERSION,
         input: {
-          model_version: "stereo-melody-large",
-          prompt,
-          duration: durationSec,
-          output_format: "mp3",
+          prompt: musicPrompt,
+          lyrics,
+          audio_format: "mp3",
         },
       }),
     });
@@ -184,19 +281,173 @@ export async function POST(request: Request) {
       );
     }
 
-    const createData = (await createRes.json()) as { id?: string; urls?: { get: string } };
-    predictionId = createData.id as string;
+    const createData = (await createRes.json()) as {
+      id?: string;
+      status?: string;
+      urls?: { get: string };
+      output?: unknown;
+      error?: string;
+    };
+
+    predictionId = createData.id ?? "";
     pollUrl = createData.urls?.get ?? "";
-    if (!predictionId || !pollUrl) {
-      await updateAssetFailure("Replicate did not return prediction id or poll URL");
+    if (!predictionId) {
+      await updateAssetFailure("Replicate did not return prediction id");
       return NextResponse.json(
         { success: false, error: "Invalid Replicate response" },
         { status: 502 }
       );
     }
-    if (hasJob && predictionId) {
+    if (hasJob) {
       await updateJob({ provider_job_id: predictionId });
     }
+
+    let outputUrl: string | null = null;
+    if (createData.status === "succeeded") {
+      outputUrl = predictionOutputToUrl(createData.output);
+    }
+
+    if (!outputUrl && !pollUrl) {
+      await updateAssetFailure("Replicate did not return a poll URL");
+      return NextResponse.json(
+        { success: false, error: "Invalid Replicate response" },
+        { status: 502 }
+      );
+    }
+
+    if (!outputUrl && pollUrl) {
+      const deadline = Date.now() + POLL_MAX_WAIT_MS;
+      while (Date.now() < deadline) {
+        const pollRes = await fetch(pollUrl, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const pollData = (await pollRes.json()) as {
+          status: string;
+          output?: unknown;
+          error?: string;
+        };
+        if (pollData.status === "succeeded") {
+          outputUrl = predictionOutputToUrl(pollData.output);
+          break;
+        }
+        if (pollData.status === "failed" || pollData.status === "canceled") {
+          const err = pollData.error || pollData.status;
+          await updateAssetFailure("Generation failed: " + err);
+          return NextResponse.json(
+            { success: false, error: String(err) },
+            { status: 502 }
+          );
+        }
+        await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+      }
+    }
+
+    if (!outputUrl) {
+      await updateAssetFailure("Generation timed out");
+      return NextResponse.json(
+        { success: false, error: "Generation timed out" },
+        { status: 504 }
+      );
+    }
+
+    let audioBuffer: ArrayBuffer;
+    try {
+      const audioRes = await fetch(outputUrl);
+      if (!audioRes.ok) {
+        await updateAssetFailure("Failed to download generated audio");
+        return NextResponse.json(
+          { success: false, error: "Failed to download audio" },
+          { status: 502 }
+        );
+      }
+      audioBuffer = await audioRes.arrayBuffer();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Download failed";
+      await updateAssetFailure(msg);
+      return NextResponse.json(
+        { success: false, error: msg },
+        { status: 502 }
+      );
+    }
+
+    const { error: uploadError } = await supabase.storage
+      .from("generated-audio")
+      .upload(storagePath, audioBuffer, {
+        cacheControl: "3600",
+        upsert: true,
+        contentType: "audio/mpeg",
+      });
+
+    if (uploadError) {
+      await updateAssetFailure("Storage upload failed: " + uploadError.message);
+      return NextResponse.json(
+        { success: false, error: "Storage upload failed" },
+        { status: 500 }
+      );
+    }
+
+    const { data: urlData, error: signedError } = await supabase.storage
+      .from("generated-audio")
+      .createSignedUrl(storagePath, 3600);
+    if (signedError || !urlData?.signedUrl) {
+      await updateAssetFailure("Failed to create signed URL");
+      return NextResponse.json(
+        { success: false, error: "Failed to create signed URL" },
+        { status: 500 }
+      );
+    }
+    const publicUrl = urlData.signedUrl;
+
+    const { error: updateError } = await supabase
+      .from("project_assets")
+      .update({ status: "success", url: publicUrl, error_message: null })
+      .eq("id", assetId)
+      .eq("user_id", user.id);
+
+    if (updateError) {
+      await updateJob({
+        status: "failed",
+        error_message: "Failed to update asset after generation",
+      });
+      return NextResponse.json(
+        { success: false, error: "Failed to update asset" },
+        { status: 500 }
+      );
+    }
+
+    const insertRow: ProjectVersionInsertRow = {
+      id: versionId,
+      project_id: projectId,
+      user_id: user.id,
+      label:
+        (row.name
+          ? `${row.name} – ${kind === "beat" ? "Beat" : "Full song"} (MiniMax 1.5)`
+          : kind === "beat"
+            ? "Beat – MiniMax 1.5"
+            : "Full song – MiniMax 1.5") || null,
+      status: "success",
+      file_path: storagePath,
+      audio_url: publicUrl,
+      asset_type: "generated",
+    };
+
+    const { error: versionError } = await supabase.from("project_versions").insert(insertRow);
+    if (versionError) {
+      console.error("[generate/music] project_versions insert", versionError);
+    }
+
+    await updateJob({
+      status: "completed",
+      error_message: null,
+      output_json: { url: publicUrl, assetId, versionId, storagePath },
+    });
+
+    return NextResponse.json({
+      success: true,
+      assetId,
+      versionId,
+      url: publicUrl,
+    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Replicate request failed";
     await updateAssetFailure(msg);
@@ -205,141 +456,4 @@ export async function POST(request: Request) {
       { status: 502 }
     );
   }
-
-  let output: string | null = null;
-  const deadline = Date.now() + POLL_MAX_WAIT_MS;
-  while (Date.now() < deadline) {
-    const pollRes = await fetch(pollUrl, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const pollData = (await pollRes.json()) as {
-      status: string;
-      output?: string;
-      error?: string;
-    };
-    if (pollData.status === "succeeded") {
-      output = typeof pollData.output === "string" ? pollData.output : null;
-      if (!output && Array.isArray(pollData.output)) output = pollData.output[0] ?? null;
-      break;
-    }
-    if (pollData.status === "failed" || pollData.status === "canceled") {
-      const err = pollData.error || pollData.status;
-      await updateAssetFailure("Generation failed: " + err);
-      return NextResponse.json(
-        { success: false, error: String(err) },
-        { status: 502 }
-      );
-    }
-    await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
-  }
-
-  if (!output) {
-    await updateAssetFailure("Generation timed out");
-    return NextResponse.json(
-      { success: false, error: "Generation timed out" },
-      { status: 504 }
-    );
-  }
-
-  let audioBuffer: ArrayBuffer;
-  try {
-    const audioRes = await fetch(output);
-    if (!audioRes.ok) {
-      await updateAssetFailure("Failed to download generated audio");
-      return NextResponse.json(
-        { success: false, error: "Failed to download audio" },
-        { status: 502 }
-      );
-    }
-    audioBuffer = await audioRes.arrayBuffer();
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "Download failed";
-    await updateAssetFailure(msg);
-    return NextResponse.json(
-      { success: false, error: msg },
-      { status: 502 }
-    );
-  }
-
-  const filePath = `${user.id}/${projectId}/${Date.now()}-${kind}.mp3`;
-
-  const { error: uploadError } = await supabase.storage
-    .from("generated-audio")
-    .upload(filePath, audioBuffer, {
-      cacheControl: "3600",
-      upsert: false,
-      contentType: "audio/mpeg",
-    });
-
-  if (uploadError) {
-    await updateAssetFailure("Storage upload failed: " + uploadError.message);
-    return NextResponse.json(
-      { success: false, error: "Storage upload failed" },
-      { status: 500 }
-    );
-  }
-
-  const { data: urlData, error: signedError } = await supabase.storage
-    .from("generated-audio")
-    .createSignedUrl(filePath, 3600);
-  if (signedError || !urlData?.signedUrl) {
-    await updateAssetFailure("Failed to create signed URL");
-    return NextResponse.json(
-      { success: false, error: "Failed to create signed URL" },
-      { status: 500 }
-    );
-  }
-  const publicUrl = urlData.signedUrl;
-
-  const { error: updateError } = await supabase
-    .from("project_assets")
-    .update({ status: "success", url: publicUrl, error_message: null })
-    .eq("id", assetId)
-    .eq("user_id", user.id);
-
-  if (updateError) {
-    await updateJob({
-      status: "failed",
-      error_message: "Failed to update asset after generation",
-    });
-    return NextResponse.json(
-      { success: false, error: "Failed to update asset" },
-      { status: 500 }
-    );
-  }
-
-  // Best-effort: record this generation as a project_version for export workflows.
-  try {
-    const insertRow: ProjectVersionInsertRow = {
-      project_id: projectId,
-      user_id: user.id,
-      label:
-        (row.name
-          ? `${row.name} – ${kind === "beat" ? "Beat" : "Full song"}`
-          : kind === "beat"
-            ? "Beat"
-            : "Full song") || null,
-      status: "success",
-      // Prefer storing the storage path; export endpoint will re-sign it.
-      file_path: filePath,
-      audio_url: null,
-      asset_type: "generated",
-    };
-    await supabase.from("project_versions").insert(insertRow);
-  } catch (e) {
-    // Non-fatal; log on server but don't fail the request.
-    console.error("[generate/music] project_versions insert", e);
-  }
-
-  await updateJob({
-    status: "success",
-    error_message: null,
-    output_json: { url: publicUrl, assetId },
-  });
-
-  return NextResponse.json({
-    success: true,
-    assetId,
-    url: publicUrl,
-  });
 }

@@ -39,6 +39,8 @@ export async function createProjectInSupabase(
     instruments: data.instruments,
     reference_uploads: data.referenceUploads,
     prompt: data.prompt ?? "",
+    lyrics: data.lyrics ?? "",
+    vocal_style: data.vocalStyle ?? "",
     created_at: now,
     updated_at: now,
   };
@@ -86,6 +88,8 @@ function rowToProject(row: Record<string, unknown>): Project {
     instruments: ((row.instruments as string[]) ?? []) as string[],
     referenceUploads: ((row.reference_uploads as string[]) ?? []) as string[],
     prompt: (row.prompt as string) ?? undefined,
+    lyrics: (row.lyrics as string) ?? undefined,
+    vocalStyle: (row.vocal_style as string) ?? undefined,
     createdAt: (row.created_at as string) ?? "",
     updatedAt: (row.updated_at as string) ?? "",
   };

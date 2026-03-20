@@ -64,6 +64,10 @@ export interface Project {
   referenceUploads: string[]; // placeholder: stored paths/ids for future uploads
   /** Optional description for AI generation (Suno-style prompt). */
   prompt?: string;
+  /** Lyrics or section markers for vocal models (MiniMax, etc.). */
+  lyrics?: string;
+  /** e.g. male rap, female soul, airy falsetto */
+  vocalStyle?: string;
   createdAt: string;
   updatedAt: string;
 }
