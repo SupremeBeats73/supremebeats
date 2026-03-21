@@ -1,16 +1,16 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-function getSiteOrigin(request: NextRequest): string {
-  const raw =
-    process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/^["']|["']$/g, "") ?? "";
-  if (raw && /^https?:\/\//i.test(raw)) {
-    return new URL(raw).origin;
-  }
+/**
+ * Use the origin the user actually requested (e.g. www vs apex).
+ * PKCE cookies are host-specific; redirecting to a different origin after exchange
+ * breaks session/cookie alignment. NEXT_PUBLIC_SITE_URL is still used elsewhere for emails/links.
+ */
+function getRequestOrigin(request: NextRequest): string {
   const forwardedHost = request.headers.get("x-forwarded-host");
   const proto = request.headers.get("x-forwarded-proto") ?? "https";
   if (forwardedHost) {
-    return `${proto}://${forwardedHost}`;
+    return `${proto}://${forwardedHost.split(",")[0].trim()}`;
   }
   return new URL(request.url).origin;
 }
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
   const errorParam = requestUrl.searchParams.get("error");
   const errorDescription = requestUrl.searchParams.get("error_description");
 
-  const siteOrigin = getSiteOrigin(request);
+  const siteOrigin = getRequestOrigin(request);
   const nextPath =
     nextRaw && nextRaw.startsWith("/") && !nextRaw.startsWith("//")
       ? nextRaw

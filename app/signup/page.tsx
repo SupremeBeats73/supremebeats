@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from "../lib/supabaseClient";
 import AuthLayout from "../components/AuthLayout";
 import { formatAuthError } from "../lib/authErrors";
+import { getOAuthCallbackRedirectUrl } from "../lib/oauthRedirect";
 import { normalizeUsername } from "../lib/usernameUtils";
 
 type OAuthProvider = "google" | "facebook";
@@ -53,32 +54,7 @@ export default function SignupPage() {
   async function handleOAuth(provider: OAuthProvider) {
     setError(null);
     setOauthLoading(provider);
-    const rawBaseUrl =
-      process.env.NEXT_PUBLIC_SITE_URL ??
-      (typeof window !== "undefined" ? window.location.origin : "");
-
-    // Vercel env vars occasionally come through with quotes/whitespace; Supabase expects a valid absolute URL.
-    const baseUrl = String(rawBaseUrl)
-      .trim()
-      .replace(/^["']/, "")
-      .replace(/["']$/, "");
-
-    let redirectTo: string;
-    try {
-      const sanitizedBaseUrl = baseUrl;
-      // If NEXT_PUBLIC_SITE_URL is missing/invalid, fall back to the current origin.
-      if (!/^https?:\/\//i.test(sanitizedBaseUrl)) {
-        const fallbackOrigin =
-          typeof window !== "undefined" ? window.location.origin : "";
-        redirectTo = new URL("/auth/callback", fallbackOrigin).toString();
-      } else {
-        redirectTo = new URL("/auth/callback", sanitizedBaseUrl).toString();
-      }
-    } catch {
-      const fallbackOrigin =
-        typeof window !== "undefined" ? window.location.origin : "";
-      redirectTo = `${fallbackOrigin}/auth/callback`;
-    }
+    const redirectTo = getOAuthCallbackRedirectUrl();
     const { data, error: err } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo },
