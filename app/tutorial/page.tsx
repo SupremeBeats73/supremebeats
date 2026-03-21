@@ -86,7 +86,7 @@ export default function TutorialPage() {
               2. Creating music in Studio
             </h2>
             <p className="mb-2 text-sm leading-relaxed">
-              Go to <Link href="/dashboard/studio" className="text-[var(--neon-green)] hover:underline">Studio</Link> to start a new project or open an existing one. Use &quot;New project&quot; to generate AI-backed tracks, then refine and export from your project.
+              Go to <Link href="/studio" className="text-[var(--neon-green)] hover:underline">Studio</Link> to start a new project or open an existing one. Use &quot;New project&quot; to generate AI-backed tracks, then refine and export from your project.
             </p>
             <p className="text-sm leading-relaxed">
               Your work is saved under <strong className="text-white">Projects</strong> so you can return anytime.
@@ -111,7 +111,7 @@ export default function TutorialPage() {
             </p>
             <div className="mt-4 flex flex-wrap justify-center gap-3">
               <Link
-                href="/dashboard/studio"
+                href="/studio"
                 className="rounded-lg bg-[var(--neon-green)] px-4 py-2 text-sm font-semibold text-black hover:bg-[var(--neon-green-dim)]"
               >
                 Open Studio

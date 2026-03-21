@@ -17,7 +17,9 @@ import {
   insertAssetInSupabase,
   updateAssetStatusInSupabase,
   upsertYouTubePackageInSupabase,
+  updateProjectInSupabase,
 } from "../lib/supabaseProjects";
+import type { ProjectUpdatePatch } from "../lib/supabaseProjects";
 import { uploadAssetToBucket } from "../lib/uploadAsset";
 import type {
   Project,
@@ -64,6 +66,7 @@ type ProjectsContextType = {
   getYouTubePackage: (projectId: string) => YouTubePackageData | undefined;
   setYouTubePackage: (projectId: string, data: YouTubePackageData) => void | Promise<void>;
   mockGenerateYouTubePackage: (projectId: string) => Promise<YouTubePackageData>;
+  updateProject: (projectId: string, patch: ProjectUpdatePatch) => Promise<void>;
 };
 
 const ProjectsContext = createContext<ProjectsContextType | null>(null);
@@ -323,6 +326,15 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     [user?.id, projects]
   );
 
+  const updateProject = useCallback(
+    async (projectId: string, patch: ProjectUpdatePatch) => {
+      if (!user?.id) throw new Error("Must be signed in to update a project");
+      await updateProjectInSupabase(user.id, projectId, patch);
+      await refreshProjects();
+    },
+    [user?.id, refreshProjects]
+  );
+
   return (
     <ProjectsContext.Provider
       value={{
@@ -340,6 +352,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         getYouTubePackage,
         setYouTubePackage,
         mockGenerateYouTubePackage,
+        updateProject,
       }}
     >
       {children}

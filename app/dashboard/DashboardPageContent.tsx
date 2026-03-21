@@ -56,12 +56,44 @@ export default function DashboardPageContent({
 
       <section className="mt-8">
         <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-[var(--muted)]">
+          Quick actions
+        </h2>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href="/studio"
+            className="rounded-xl border border-[var(--purple-glow)]/40 bg-[var(--purple-mid)]/15 px-5 py-3 text-sm font-semibold text-white shadow-[0_0_20px_rgba(124,58,237,0.15)] transition-all hover:border-[var(--neon-green)]/50 hover:text-[var(--neon-green)]"
+          >
+            Open Studio hub
+          </Link>
+          <Link
+            href="/studio/music"
+            className="rounded-xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-medium text-[var(--muted)] transition-colors hover:border-white/25 hover:text-white"
+          >
+            Music Studio
+          </Link>
+          <Link
+            href="/studio/youtube"
+            className="rounded-xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-medium text-[var(--muted)] transition-colors hover:border-white/25 hover:text-white"
+          >
+            YouTube Studio
+          </Link>
+          <Link
+            href="/dashboard/projects"
+            className="rounded-xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-medium text-[var(--muted)] transition-colors hover:border-white/25 hover:text-white"
+          >
+            Projects
+          </Link>
+        </div>
+      </section>
+
+      <section className="mt-8">
+        <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-[var(--muted)]">
           Recent generations
         </h2>
         {recentGenerations.length === 0 ? (
           <p className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-4 text-sm text-[var(--muted)]">
             No generations yet. Create something in{" "}
-            <Link href="/dashboard/studio" className="text-[var(--purple-glow)] hover:underline">
+            <Link href="/studio" className="text-[var(--purple-glow)] hover:underline">
               Studio
             </Link>
             .

@@ -111,7 +111,7 @@ export default function NewProjectPage() {
         }
       }
 
-      const target = `/dashboard/studio?project=${project.id}`;
+      const target = `/studio/music?project=${project.id}`;
       if (process.env.NODE_ENV === "development") {
         console.log("[NewProject] Navigating to Studio with project", {
           projectId: project.id,
@@ -156,7 +156,7 @@ export default function NewProjectPage() {
     <div className="mx-auto max-w-2xl">
       <div className="mb-6 flex items-center gap-4">
         <Link
-          href="/dashboard/studio"
+          href="/studio"
           className="text-sm text-[var(--muted)] hover:text-white"
         >
           ← Studio
@@ -327,7 +327,7 @@ export default function NewProjectPage() {
             {submitting ? "Creating…" : "Create & open in Studio"}
           </button>
           <Link
-            href="/dashboard/studio"
+            href="/studio"
             className="rounded-xl border border-white/20 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/5"
           >
             Cancel

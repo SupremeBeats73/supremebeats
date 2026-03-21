@@ -102,7 +102,7 @@ export default function DiscoveryFeedPage() {
               Be the first to drop a beat. Create a project, generate a track, and it’ll show up here for the world to hear.
             </p>
             <a
-              href="/dashboard/studio"
+              href="/studio"
               className="rounded-xl bg-[var(--neon-green)] px-6 py-3 text-sm font-semibold text-black transition-all hover:bg-[var(--neon-green-dim)] hover:shadow-[0_0_24px_var(--neon-glow)]"
             >
               Be the first to drop a beat

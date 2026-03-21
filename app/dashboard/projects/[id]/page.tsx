@@ -280,7 +280,7 @@ export default async function ProjectDetailPage({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Link
-            href={`/dashboard/studio?project=${project.id}`}
+            href={`/studio/music?project=${project.id}`}
             className="rounded-xl bg-[var(--neon-green)] px-4 py-2 text-sm font-semibold text-black transition-all hover:bg-[var(--neon-green-dim)] hover:shadow-[0_0_24px_var(--neon-glow)]"
           >
             Generate new version

@@ -20,7 +20,7 @@ export default function ProjectsPage() {
           </p>
         </div>
         <Link
-          href="/dashboard/studio/new"
+          href="/studio"
           className="inline-flex min-h-[44px] items-center rounded-xl bg-[var(--neon-green)] px-5 py-2.5 text-sm font-semibold text-black transition-all hover:bg-[var(--neon-green-dim)] hover:shadow-[0_0_24px_var(--neon-glow)]"
         >
           New project
@@ -44,7 +44,7 @@ export default function ProjectsPage() {
         <div className="rounded-xl border border-dashed border-[var(--card-border)] bg-[var(--card-bg)]/50 p-12 text-center">
           <p className="mb-4 text-[var(--muted)]">No projects yet.</p>
           <Link
-            href="/dashboard/studio/new"
+            href="/studio"
             className="inline-block rounded-xl bg-[var(--neon-green)] px-5 py-2.5 text-sm font-semibold text-black hover:bg-[var(--neon-green-dim)]"
           >
             Create your first project
@@ -69,7 +69,7 @@ export default function ProjectsPage() {
                     Detail
                   </Link>
                   <Link
-                    href={`/dashboard/studio?project=${p.id}`}
+                    href={`/studio/music?project=${p.id}`}
                     className="inline-flex min-h-[44px] items-center rounded-lg bg-[var(--neon-green)] px-4 py-2.5 text-sm font-semibold text-black transition-opacity hover:opacity-90"
                   >
                     Open in Studio

@@ -95,6 +95,44 @@ function rowToProject(row: Record<string, unknown>): Project {
   };
 }
 
+export type ProjectUpdatePatch = Partial<{
+  name: string;
+  genre: string;
+  bpm: number;
+  key: string;
+  mood: string;
+  duration: number;
+  prompt: string;
+  lyrics: string;
+  vocalStyle: string;
+  instruments: string[];
+}>;
+
+export async function updateProjectInSupabase(
+  userId: string,
+  projectId: string,
+  patch: ProjectUpdatePatch
+): Promise<void> {
+  const row: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (patch.name !== undefined) row.name = patch.name;
+  if (patch.genre !== undefined) row.genre = patch.genre;
+  if (patch.bpm !== undefined) row.bpm = patch.bpm;
+  if (patch.key !== undefined) row.key = patch.key;
+  if (patch.mood !== undefined) row.mood = patch.mood;
+  if (patch.duration !== undefined) row.duration = patch.duration;
+  if (patch.prompt !== undefined) row.prompt = patch.prompt;
+  if (patch.lyrics !== undefined) row.lyrics = patch.lyrics;
+  if (patch.vocalStyle !== undefined) row.vocal_style = patch.vocalStyle;
+  if (patch.instruments !== undefined) row.instruments = patch.instruments;
+
+  const { error } = await supabase
+    .from("projects")
+    .update(row)
+    .eq("id", projectId)
+    .eq("user_id", userId);
+  if (error) throw error;
+}
+
 // —— Project assets ——
 
 export async function fetchAssetsForProjects(

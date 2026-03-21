@@ -19,7 +19,7 @@ const NAV_ITEMS = [
     ),
   },
   {
-    href: "/dashboard/studio",
+    href: "/studio",
     label: "Studio",
     icon: (
       <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>

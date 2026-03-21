@@ -188,7 +188,7 @@ export default function StudioPageContent() {
               {projects.slice(-5).reverse().map((p) => (
                 <li key={p.id}>
                   <Link
-                    href={`/dashboard/studio?project=${p.id}`}
+                    href={`/studio/music?project=${p.id}`}
                     className="block rounded-lg border border-white/5 bg-white/5 px-3 py-2 text-sm text-white transition-colors hover:bg-white/10"
                   >
                     {p.name} · {p.genre || "—"} · {p.bpm} BPM

@@ -130,7 +130,7 @@ export default function DashboardSuccessPage() {
           Your profile is updated — the Gold Mic is live across SupremeBeats.
         </p>
         <Link
-          href="/dashboard/studio"
+          href="/studio"
           className="mt-10 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 px-8 py-4 text-base font-bold text-black shadow-lg transition-all hover:from-amber-300 hover:to-amber-400 hover:shadow-amber-500/30"
           style={{ boxShadow: "0 0 32px rgba(250,204,21,0.35)" }}
         >

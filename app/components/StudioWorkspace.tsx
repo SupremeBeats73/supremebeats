@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useProjects } from "../context/ProjectsContext";
 import { useJobs } from "../context/JobsContext";
-import { assetKindToJobType } from "../lib/jobConfig";
+import { assetKindToJobType, JOB_CREDIT_COST } from "../lib/jobConfig";
 
 type TransportState = "stopped" | "playing" | "paused";
 
@@ -15,6 +15,12 @@ type StudioWorkspaceProps = {
   onGenerated?: (payload: { url?: string; jobId?: string }) => void;
   /** Project id to associate with generation (required for /api/generate). */
   projectId?: string;
+  /** Seed controls from the saved project (Music Studio). */
+  initialBpm?: number;
+  initialKey?: string;
+  initialGenre?: string;
+  /** Persist parent form (project row) before hitting /api/generate/music (reads DB). */
+  onPersistBeforeGenerate?: () => Promise<void>;
 };
 
 type WaveSurferLike = {
@@ -29,6 +35,10 @@ export default function StudioWorkspace({
   tracks = [],
   onGenerated,
   projectId,
+  initialBpm,
+  initialKey,
+  initialGenre,
+  onPersistBeforeGenerate,
 }: StudioWorkspaceProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const wavesurferRefs = useRef<WaveSurferLike[]>([]);
@@ -47,6 +57,19 @@ export default function StudioWorkspace({
   const { user } = useAuth();
   const { addAsset, updateAssetStatus } = useProjects();
   const { submitJob, completeJob, failJob, creditsRemaining, creditsLoading } = useJobs();
+  const [generatingKind, setGeneratingKind] = useState<"beat" | "full_song" | null>(null);
+
+  useEffect(() => {
+    if (initialBpm != null && Number.isFinite(initialBpm)) {
+      setBpm(String(initialBpm));
+    }
+  }, [initialBpm]);
+  useEffect(() => {
+    if (initialKey != null) setKey(initialKey);
+  }, [initialKey]);
+  useEffect(() => {
+    if (initialGenre != null) setGenre(initialGenre);
+  }, [initialGenre]);
 
   const trackUrlsKey = useMemo(
     () => tracks.map((t) => t.url).join("|"),
@@ -198,7 +221,7 @@ export default function StudioWorkspace({
     return () => clearInterval(id);
   };
 
-  const handleGenerate = async () => {
+  const handleGenerateMusic = async (kind: "beat" | "full_song") => {
     if (isGenerating) return;
     if (!projectId) {
       setError("Select or create a project to generate music.");
@@ -209,18 +232,26 @@ export default function StudioWorkspace({
       return;
     }
 
+    const jobType = assetKindToJobType(kind);
+    if (!jobType) {
+      setError("Generation type is not configured.");
+      return;
+    }
+    const cost = JOB_CREDIT_COST[jobType];
+    if (!creditsLoading && creditsRemaining < cost) {
+      setError(`You need at least ${cost} credits for this generation.`);
+      return;
+    }
+
     setIsGenerating(true);
+    setGeneratingKind(kind);
     setError(null);
     setProgress(0);
 
     const clear = fakeProgress();
 
     try {
-      const jobType = assetKindToJobType("beat");
-      if (!jobType) {
-        setError("Generation type is not configured.");
-        return;
-      }
+      await onPersistBeforeGenerate?.();
 
       const jobResult = await submitJob(user.id, projectId, jobType);
       if (!jobResult.success || !jobResult.jobId) {
@@ -229,15 +260,18 @@ export default function StudioWorkspace({
       }
 
       const jobId = jobResult.jobId;
-      const label = `${genre} beat in ${key}`.trim() || "Beat";
-      const asset = await addAsset(projectId, "beat", label, "processing");
+      const label =
+        kind === "beat"
+          ? `${genre} beat in ${key}`.trim() || "Beat"
+          : `${genre} full song in ${key}`.trim() || "Full song";
+      const asset = await addAsset(projectId, kind, label, "processing");
 
       const res = await fetch("/api/generate/music", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           projectId,
-          kind: "beat",
+          kind,
           assetId: asset.id,
           jobId,
           jobType,
@@ -275,6 +309,7 @@ export default function StudioWorkspace({
       const message = e instanceof Error ? e.message : "Generation failed";
       setError(message);
     } finally {
+      setGeneratingKind(null);
       setTimeout(() => {
         setIsGenerating(false);
         setProgress(0);
@@ -351,7 +386,11 @@ export default function StudioWorkspace({
       {isBusy && (
         <div className="glass-panel absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 rounded-3xl">
           <p className="text-lg font-semibold text-white">
-            {isGenerating ? "Generating your Supreme Beat..." : "Deconstructing Audio..."}
+            {isGenerating && generatingKind === "full_song"
+              ? "Generating your full song..."
+              : isGenerating
+                ? "Generating your Supreme Beat..."
+                : "Deconstructing Audio..."}
           </p>
           <div className="w-64">
             <div className="h-2 w-full overflow-hidden rounded-full bg-black/60">
@@ -476,7 +515,11 @@ export default function StudioWorkspace({
           {isGenerating && (
             <div className="space-y-1">
               <div className="flex items-center justify-between text-[10px] text-white/60">
-                <span>Generating your Supreme Beat...</span>
+                <span>
+                  {generatingKind === "full_song"
+                    ? "Generating full song..."
+                    : "Generating beat..."}
+                </span>
                 <span>{Math.round(progress)}%</span>
               </div>
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/60">
@@ -498,11 +541,27 @@ export default function StudioWorkspace({
           {error && <p className="text-[11px] text-red-400">{error}</p>}
           <button
             type="button"
-            onClick={handleGenerate}
-            disabled={isGenerating || (creditsLoading ? false : creditsRemaining < 1)}
+            onClick={() => void handleGenerateMusic("beat")}
+            disabled={
+              isGenerating ||
+              (creditsLoading ? false : creditsRemaining < JOB_CREDIT_COST.beat)
+            }
             className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-[#6E2CF2] px-4 py-3 text-sm font-semibold text-white shadow-[0_0_24px_rgba(110,44,242,0.9)] transition hover:bg-[#8242ff] disabled:cursor-not-allowed disabled:opacity-60 sm:py-2"
           >
-            {isGenerating ? "Generating…" : "Generate"}
+            {isGenerating && generatingKind === "beat" ? "Generating…" : "Generate beat"}
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleGenerateMusic("full_song")}
+            disabled={
+              isGenerating ||
+              (creditsLoading ? false : creditsRemaining < JOB_CREDIT_COST.full_song)
+            }
+            className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-[var(--neon-green)]/40 bg-[var(--neon-green)]/10 px-4 py-3 text-sm font-semibold text-[var(--neon-green)] shadow-[0_0_18px_rgba(34,197,94,0.25)] transition hover:bg-[var(--neon-green)]/20 disabled:cursor-not-allowed disabled:opacity-60 sm:py-2"
+          >
+            {isGenerating && generatingKind === "full_song"
+              ? "Generating…"
+              : "Generate full song"}
           </button>
           {!creditsLoading && creditsRemaining < 999999 && (
             <p className="text-[10px] text-white/50">
