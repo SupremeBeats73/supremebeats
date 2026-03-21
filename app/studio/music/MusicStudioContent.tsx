@@ -362,6 +362,7 @@ export default function MusicStudioContent() {
           onGenerated={() => {
             void refreshProjects();
             void (async () => {
+              if (!user?.id) return;
               const { data } = await supabase
                 .from("project_versions")
                 .select("id, label, status, created_at")
