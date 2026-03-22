@@ -8,8 +8,9 @@ const REPLICATE_MINIMAX_MUSIC_PREDICTIONS =
 const POLL_INTERVAL_MS = 2000;
 const POLL_MAX_WAIT_MS = 300_000; // 5 min — async music jobs
 
-const MIN_PROMPT = 10;
-const MAX_PROMPT = 300;
+/** MiniMax Music 1.5 — descriptive prompt budget (optional details trimmed first; core settings never dropped). */
+const MIN_MUSIC_PROMPT = 10;
+const MAX_MUSIC_PROMPT = 600;
 const MIN_LYRICS = 10;
 const MAX_LYRICS = 600;
 
@@ -61,45 +62,209 @@ function ensureCharRange(text: string, min: number, max: number, filler: string)
   return s.slice(0, max);
 }
 
-function buildMusicPrompt(row: ProjectRow, kind: "beat" | "full_song"): string {
-  const parts = [
-    kind === "beat" ? "Instrumental beat" : "Full song",
-    row.genre?.trim() && `Genre: ${row.genre.trim()}`,
-    row.mood?.trim() && `Mood: ${row.mood.trim()}`,
-    Number.isFinite(row.bpm) && row.bpm > 0 && `${row.bpm} BPM`,
-    row.key?.trim() && `Key: ${row.key.trim()}`,
-    row.vocal_style?.trim() && `Vocal style: ${row.vocal_style.trim()}`,
-    row.prompt?.trim() && `Direction: ${row.prompt.trim()}`,
-  ].filter(Boolean) as string[];
-  const inst = asStringArray(row.instruments);
-  if (inst.length > 0) {
-    parts.push(`Instruments: ${inst.slice(0, 12).join(", ")}`);
-  }
-  const raw = parts.join(". ");
-  return ensureCharRange(
-    raw || "Cinematic modern production",
-    MIN_PROMPT,
-    MAX_PROMPT,
-    "High quality mix, wide stereo, punchy drums"
-  );
+/** Production texture hints from genre (natural language for MiniMax). */
+function genreProductionTexture(genreRaw: string): string {
+  const g = genreRaw.trim().toLowerCase();
+  if (!g) return "professional mix, clear low end, polished production";
+  if (g.includes("lo-fi") || g.includes("lofi") || g.includes("chillhop"))
+    return "soft drums, vinyl texture, warm tape saturation, relaxed pocket, mellow dynamics";
+  if (g.includes("trap"))
+    return "heavy 808s, crisp hi-hats, punchy drums, dark aggressive energy";
+  if (g.includes("drill"))
+    return "sliding 808s, sparse dark melodies, punchy drums, UK drill energy";
+  if (g.includes("afro"))
+    return "percussive grooves, warm low end, melodic hooks, Afrobeats bounce";
+  if (g.includes("hip-hop") || g.includes("hip hop") || g.includes("hiphop"))
+    return "swing groove, punchy drums, warm bass, sample-friendly pocket";
+  if (g.includes("r&b") || g.includes("rnb") || g.includes("r and b"))
+    return "smooth chords, intimate groove, silky highs, polished vocal-ready mix";
+  if (g.includes("pop"))
+    return "bright mix, catchy energy, wide chorus, radio-ready clarity";
+  if (g.includes("edm") || g.includes("house") || g.includes("electronic") || g.includes("dance"))
+    return "wide stereo, driving four-on-the-floor energy, club-ready impact";
+  if (g.includes("rock"))
+    return "live-band energy, gritty guitars, driving drums, powerful dynamics";
+  if (g.includes("jazz"))
+    return "swing feel, warm upright bass, brushed or light drums, harmonic richness";
+  if (g.includes("ambient") || g.includes("cinematic"))
+    return "spacious reverb, evolving pads, subtle motion, film-score depth";
+  return "professional mix, clear low end, polished modern production";
 }
 
-function buildLyrics(row: ProjectRow, kind: "beat" | "full_song"): string {
+const STUDIO_PROMPT_META_PREFIX = "SBMETA_JSON";
+
+/** Music Studio form packs JSON meta on the first line; remainder is free direction text. */
+function unpackStudioPromptMeta(full: string | null | undefined): {
+  meta: Record<string, string>;
+  direction: string;
+} {
+  const s = (full ?? "").trim();
+  if (!s.startsWith(STUDIO_PROMPT_META_PREFIX)) return { meta: {}, direction: s };
+  const nl = s.indexOf("\n");
+  if (nl <= STUDIO_PROMPT_META_PREFIX.length) return { meta: {}, direction: s };
+  try {
+    const raw = s.slice(STUDIO_PROMPT_META_PREFIX.length, nl);
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return { meta: {}, direction: s };
+    }
+    const meta: Record<string, string> = {};
+    for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+      if (typeof v === "string") meta[k] = v;
+    }
+    return { meta, direction: s.slice(nl + 1).trim() };
+  } catch {
+    return { meta: {}, direction: s };
+  }
+}
+
+/**
+ * Single descriptive prompt for MiniMax Music 1.5.
+ * Core block (genre, BPM, key, mood, vocal style for full song) is NEVER removed when trimming;
+ * only optional tail (texture, lyrics excerpt, meta, notes) is dropped to fit MAX_MUSIC_PROMPT.
+ */
+function buildDescriptiveMinimaxPrompt(row: ProjectRow, kind: "beat" | "full_song"): string {
+  const genre = row.genre?.trim() || "Electronic";
+  const bpm =
+    Number.isFinite(row.bpm) && row.bpm > 0 ? Math.min(300, Math.max(40, Math.round(row.bpm))) : null;
+  const keyStr = row.key?.trim();
+  const mood = row.mood?.trim();
+  const vocalStyle = row.vocal_style?.trim();
+  const { meta, direction: directionRaw } = unpackStudioPromptMeta(row.prompt);
+  const direction = directionRaw.trim();
+  const projectName = row.name?.trim();
+  const durationSec =
+    Number.isFinite(row.duration) && row.duration > 0
+      ? Math.min(600, Math.max(8, Math.round(row.duration)))
+      : null;
+  const inst = asStringArray(row.instruments);
+  const instPhrase = inst.length ? inst.slice(0, 10).join(", ") : "";
+
+  const texture = genreProductionTexture(genre);
+
+  const beatClosing =
+    "Instrumental only, no vocals, loop-ready beat.";
+  const fullSongClosing =
+    "Full song with vocals and song structure including verse and chorus.";
+
+  /** Always included first — matches user-facing studio choices. */
+  const coreSegments: string[] = [];
+  if (kind === "beat") {
+    coreSegments.push(`${genre} instrumental beat`);
+  } else {
+    coreSegments.push(`${genre} full song`);
+  }
+  if (bpm != null) {
+    coreSegments.push(`${bpm} BPM`);
+  }
+  if (keyStr) {
+    coreSegments.push(`${keyStr} key`);
+  }
+  if (mood) {
+    coreSegments.push(`${mood} mood`);
+  }
+  if (kind === "beat") {
+    coreSegments.push("no vocals");
+  } else if (vocalStyle) {
+    coreSegments.push(`vocal style: ${vocalStyle}`);
+  }
+
+  const coreBlock = coreSegments.join(", ").replace(/\s+/g, " ").trim();
+
+  /** Lyrics snippet for the music prompt (full lyrics still sent via `lyrics` input). */
+  let lyricsForPrompt: string | null = null;
+  if (kind === "full_song") {
+    const L = row.lyrics?.trim() ?? "";
+    if (L.length >= MIN_LYRICS) {
+      const one = L.replace(/\s+/g, " ");
+      const cap = 280;
+      lyricsForPrompt =
+        one.length <= cap
+          ? `User lyrics to perform (use [verse] and [chorus] sections): ${one}`
+          : `User lyrics to perform (use [verse] and [chorus] sections): ${one.slice(0, cap - 3)}...`;
+    }
+  }
+
+  /**
+   * Optional segments in order: keep early items, drop from the END when over budget.
+   * (Texture and lyrics stay as late as possible in the “optional” list… we want texture early.)
+   * Order: texture + production first, then lyrics, instruments, meta, notes, duration, title last.
+   */
+  const optionalOrdered: string[] = [];
+  optionalOrdered.push(texture);
+  if (lyricsForPrompt) optionalOrdered.push(lyricsForPrompt);
+  if (instPhrase) optionalOrdered.push(`instruments: ${instPhrase}`);
+  if (kind === "full_song") {
+    const lyricEnergy = meta.lyricEnergy?.trim();
+    if (lyricEnergy) optionalOrdered.push(`lyric performance energy: ${lyricEnergy}`);
+  }
+  const structure = meta.structure?.trim();
+  if (structure) optionalOrdered.push(`song structure: ${structure}`);
+  const artistRef = meta.artist?.trim();
+  if (artistRef) optionalOrdered.push(`artist sound reference: ${artistRef}`);
+  if (meta.hasReference === "1") {
+    optionalOrdered.push(
+      "reference audio uploaded for this project — match groove, tone, and vibe to that reference"
+    );
+  }
+  if (direction) optionalOrdered.push(`additional direction: ${direction}`);
+  if (durationSec != null) optionalOrdered.push(`target length about ${durationSec} seconds`);
+  if (projectName && projectName.toLowerCase() !== "untitled project") {
+    optionalOrdered.push(`project title vibe: ${projectName}`);
+  }
+
+  const closing = kind === "beat" ? beatClosing : fullSongClosing;
+
+  const joinAll = (opts: string[]) => {
+    const parts = [coreBlock, ...opts.filter(Boolean), closing].filter(Boolean);
+    return parts.join(", ").replace(/\s+/g, " ").trim();
+  };
+
+  let opts = [...optionalOrdered];
+  let prompt = joinAll(opts);
+  while (prompt.length > MAX_MUSIC_PROMPT && opts.length > 0) {
+    opts.pop();
+    prompt = joinAll(opts);
+  }
+
+  if (prompt.length > MAX_MUSIC_PROMPT) {
+    const sep = ", ";
+    const suffix = `, ${closing}`;
+    const headBudget = MAX_MUSIC_PROMPT - suffix.length;
+    let head = coreBlock;
+    if (head.length > headBudget) {
+      head = head.slice(0, Math.max(MIN_MUSIC_PROMPT, headBudget)).replace(/[, ]+$/, "");
+    }
+    prompt = `${head}${suffix}`.replace(/\s+/g, " ").trim().slice(0, MAX_MUSIC_PROMPT);
+  }
+
+  if (prompt.length < MIN_MUSIC_PROMPT) {
+    prompt = `${prompt}, high quality stereo mix`.slice(0, MAX_MUSIC_PROMPT);
+  }
+  while (prompt.length < MIN_MUSIC_PROMPT) {
+    prompt = `${prompt}.`;
+  }
+
+  return prompt.slice(0, MAX_MUSIC_PROMPT);
+}
+
+function buildMinimaxLyrics(row: ProjectRow, kind: "beat" | "full_song"): string {
+  if (kind === "beat") {
+    const beatLyrics = `[instrumental]
+No vocals. Pure instrumental beat, loop-friendly arrangement.
+[verse] (instrumental groove — drums, bass, harmony)
+[chorus] (instrumental hook — memorable motif, no singing)
+[outro] (instrumental fade)`;
+    return ensureCharRange(beatLyrics, MIN_LYRICS, MAX_LYRICS, "[instrumental] ");
+  }
+
   const existing = row.lyrics?.trim() ?? "";
   if (existing.length >= MIN_LYRICS) {
-    return ensureCharRange(existing, MIN_LYRICS, MAX_LYRICS, "[verse] Hold the line.");
+    const withStructure = `Full song: use clear [verse] and [chorus] section markers. Follow the lyrics and implied melody closely.\n${existing}`;
+    return ensureCharRange(withStructure, MIN_LYRICS, MAX_LYRICS, "[verse] ");
   }
-  const fallback =
-    kind === "beat"
-      ? `[intro]
-Feel the pocket, night is young.
-[verse]
-808s hit low, hats shimmer gold.
-[chorus]
-We ride the rhythm, never fold.
-[outro]
-Let it ride.`
-      : `[intro]
+
+  const fallback = `[intro]
 Lights up, we own the sky tonight.
 [verse]
 Every bar a spark, every note upright.
@@ -221,8 +386,8 @@ export async function POST(request: Request) {
   }
 
   const row = project as unknown as ProjectRow;
-  const musicPrompt = buildMusicPrompt(row, kind);
-  const lyrics = buildLyrics(row, kind);
+  const musicPrompt = buildDescriptiveMinimaxPrompt(row, kind);
+  const lyrics = buildMinimaxLyrics(row, kind);
 
   const nowIso = new Date().toISOString();
   const hasJob = !!jobId && !!jobType;
@@ -282,6 +447,18 @@ export async function POST(request: Request) {
   let predictionId = "";
 
   try {
+    console.log(
+      "[generate/music] Final MiniMax music prompt",
+      `(${musicPrompt.length} chars):`,
+      musicPrompt
+    );
+    console.log(
+      "[generate/music] MiniMax lyrics:",
+      `length=${lyrics.length}`,
+      "preview=",
+      lyrics.slice(0, 160).replace(/\s+/g, " ")
+    );
+
     const createRes = await fetch(REPLICATE_MINIMAX_MUSIC_PREDICTIONS, {
       method: "POST",
       headers: {
