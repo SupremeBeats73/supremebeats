@@ -92,8 +92,6 @@ const VOCAL_STYLE_OPTIONS = [
   "Voiceless",
 ] as const;
 
-const LYRIC_ENERGY_PILLS = ["Hype", "Chill", "Emotional", "Dark", "Uplifting"] as const;
-
 const KEY_SELECT_OPTIONS = KEYS_ROOT.flatMap((r) => [
   { value: `${r} major`, label: `${r} major` },
   { value: `${r} minor`, label: `${r} minor` },
@@ -141,7 +139,6 @@ export default function MusicStudioContent() {
   const [lyricsDetailsEnabled, setLyricsDetailsEnabled] = useState(false);
   const [lyrics, setLyrics] = useState("");
   const [vocalStyleSelect, setVocalStyleSelect] = useState("Male Rap");
-  const [lyricEnergy, setLyricEnergy] = useState("Hype");
   const [additionalDirection, setAdditionalDirection] = useState("");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">(
     "idle"
@@ -192,11 +189,6 @@ export default function MusicStudioContent() {
         : "Verse-Chorus"
     );
     setArtistReference(meta.artist ?? "");
-    if (meta.lyricEnergy && (LYRIC_ENERGY_PILLS as readonly string[]).includes(meta.lyricEnergy)) {
-      setLyricEnergy(meta.lyricEnergy);
-    } else {
-      setLyricEnergy("Hype");
-    }
     setLyricsDetailsEnabled(meta.lyricsDetails === "1");
 
     const vs = project.vocalStyle?.trim() ?? "";
@@ -207,8 +199,6 @@ export default function MusicStudioContent() {
     } else if (vs.includes(energySep)) {
       const base = vs.split(energySep)[0]?.trim() ?? "";
       if ((VOCAL_STYLE_OPTIONS as readonly string[]).includes(base)) vocalPick = base;
-      const en = vs.split(energySep).slice(1).join(energySep).trim();
-      if ((LYRIC_ENERGY_PILLS as readonly string[]).includes(en)) setLyricEnergy(en);
     } else if ((VOCAL_STYLE_OPTIONS as readonly string[]).includes(vs)) {
       vocalPick = vs;
     }
@@ -253,7 +243,6 @@ export default function MusicStudioContent() {
       tab: musicTab,
       structure: songStructure,
       artist: artistReference.trim(),
-      lyricEnergy: lyricEnergy.trim(),
       lyricsDetails: lyricsDetailsEnabled ? "1" : "0",
       vocalLine: vocalStyleSelect,
       hasReference: p?.referenceUploads?.length ? "1" : "0",
@@ -262,9 +251,7 @@ export default function MusicStudioContent() {
 
     let vocalStyleOut: string | undefined;
     if (musicTab === "full_song" && lyricsDetailsEnabled) {
-      vocalStyleOut =
-        vocalStyleSelect +
-        (lyricEnergy.trim() ? ` · lyric performance energy: ${lyricEnergy.trim()}` : "");
+      vocalStyleOut = vocalStyleSelect;
     }
 
     const patch: ProjectUpdatePatch = {
@@ -294,7 +281,6 @@ export default function MusicStudioContent() {
     musicTab,
     songStructure,
     artistReference,
-    lyricEnergy,
     lyricsDetailsEnabled,
     vocalStyleSelect,
     additionalDirection,
@@ -558,7 +544,7 @@ This is the hook — big, memorable, repeat it twice.`;
 
             <div>
               <p className="mb-2 text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
-                Mood
+                {musicTab === "full_song" ? "Mood & energy" : "Mood"}
               </p>
               <div className="flex flex-wrap gap-2">
                 {TIER1_MOODS.map((m) => (
@@ -788,27 +774,6 @@ This is the hook — big, memorable, repeat it twice.`;
                         aria-label="Vocal style"
                         className="[&_button]:min-h-[48px] [&_button]:text-base"
                       />
-                    </div>
-                    <div>
-                      <p className="mb-2 text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
-                        Mood / energy
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {LYRIC_ENERGY_PILLS.map((pill) => (
-                          <button
-                            key={pill}
-                            type="button"
-                            onClick={() => setLyricEnergy(pill)}
-                            className={`rounded-full border-2 px-4 py-2 text-sm font-semibold transition-all ${
-                              lyricEnergy === pill
-                                ? "border-[var(--neon-green)] bg-[var(--neon-green)]/15 text-white shadow-[0_0_16px_rgba(34,197,94,0.4)]"
-                                : "border-white/15 bg-black/40 text-[var(--muted)] hover:border-white/25"
-                            }`}
-                          >
-                            {pill}
-                          </button>
-                        ))}
-                      </div>
                     </div>
                   </div>
                 </div>

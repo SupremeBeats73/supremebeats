@@ -194,10 +194,6 @@ function buildDescriptiveMinimaxPrompt(row: ProjectRow, kind: "beat" | "full_son
   optionalOrdered.push(texture);
   if (lyricsForPrompt) optionalOrdered.push(lyricsForPrompt);
   if (instPhrase) optionalOrdered.push(`instruments: ${instPhrase}`);
-  if (kind === "full_song") {
-    const lyricEnergy = meta.lyricEnergy?.trim();
-    if (lyricEnergy) optionalOrdered.push(`lyric performance energy: ${lyricEnergy}`);
-  }
   const structure = meta.structure?.trim();
   if (structure) optionalOrdered.push(`song structure: ${structure}`);
   const artistRef = meta.artist?.trim();
