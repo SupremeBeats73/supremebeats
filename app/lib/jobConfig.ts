@@ -27,16 +27,16 @@ export const JOB_LIMITS = {
   automationBatchMaxTracks: 30,
 } as const;
 
-/** Credit cost per job type (placeholder values) */
+/** Credit cost per job type (Studio + jobs system) */
 export const JOB_CREDIT_COST: Record<JobType, number> = {
-  beat: 50,
-  full_song: 200,
-  vocals: 100,
-  stems: 80,
-  thumbnail: 20,
-  cover_art: 25,
-  video: 150,
-  youtube_package: 10,
+  beat: 2,
+  full_song: 5,
+  vocals: 3,
+  stems: 2,
+  thumbnail: 1,
+  cover_art: 1,
+  video: 5,
+  youtube_package: 1,
   version: 60,
   automation_batch: 500,
 };

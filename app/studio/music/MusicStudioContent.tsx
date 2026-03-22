@@ -2,10 +2,14 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useProjects } from "../../context/ProjectsContext";
-import StudioWorkspace from "../../components/StudioWorkspace";
+import StudioWorkspace, {
+  type StudioWorkspaceHandle,
+} from "../../components/StudioWorkspace";
+import StudioGenerationCard from "../../components/studio/StudioGenerationCard";
+import { JOB_CREDIT_COST } from "../../lib/jobConfig";
 import VersionExportButton from "../../dashboard/projects/VersionExportButton";
 import { supabase } from "../../lib/supabaseClient";
 import type { ProjectUpdatePatch } from "../../lib/supabaseProjects";
@@ -45,6 +49,10 @@ export default function MusicStudioContent() {
   );
   const [versions, setVersions] = useState<VersionRow[]>([]);
   const [versionsLoading, setVersionsLoading] = useState(false);
+  const workspaceRef = useRef<StudioWorkspaceHandle>(null);
+  const [pendingMusicAction, setPendingMusicAction] = useState<
+    null | "beat" | "full_song" | "stems"
+  >(null);
 
   useEffect(() => {
     if (!project) return;
@@ -339,17 +347,83 @@ export default function MusicStudioContent() {
         </div>
       </section>
 
+      {/* Generation cards — centerpiece */}
+      <section className="mb-10">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
+          Generate
+        </h2>
+        <div className="grid gap-6 sm:grid-cols-2">
+          <StudioGenerationCard
+            icon="🎵"
+            title="Generate Beat"
+            description="AI-generated beat for your project"
+            credits={JOB_CREDIT_COST.beat}
+            busy={pendingMusicAction === "beat"}
+            disabled={!!pendingMusicAction}
+            onGenerate={async () => {
+              setPendingMusicAction("beat");
+              try {
+                await workspaceRef.current?.generateBeat();
+              } finally {
+                setPendingMusicAction(null);
+              }
+            }}
+          />
+          <StudioGenerationCard
+            icon="🎤"
+            title="Generate Full Song"
+            description="Complete track with structure and arrangement"
+            credits={JOB_CREDIT_COST.full_song}
+            busy={pendingMusicAction === "full_song"}
+            disabled={!!pendingMusicAction}
+            onGenerate={async () => {
+              setPendingMusicAction("full_song");
+              try {
+                await workspaceRef.current?.generateFullSong();
+              } finally {
+                setPendingMusicAction(null);
+              }
+            }}
+          />
+          <StudioGenerationCard
+            icon="🎛️"
+            title="Generate Stems"
+            description="Separated stems from your track"
+            credits={JOB_CREDIT_COST.stems}
+            busy={pendingMusicAction === "stems"}
+            disabled={!!pendingMusicAction}
+            onGenerate={async () => {
+              setPendingMusicAction("stems");
+              try {
+                await workspaceRef.current?.splitStems();
+              } finally {
+                setPendingMusicAction(null);
+              }
+            }}
+          />
+          <StudioGenerationCard
+            icon="🎙️"
+            title="Generate Optional Vocals"
+            description="Add vocal stems or top-line"
+            credits={JOB_CREDIT_COST.vocals}
+            comingSoon
+          />
+        </div>
+      </section>
+
       {/* Workspace: waveform + dual generate (sidebar) */}
       <section className="mb-10">
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
           Mix & generate
         </h2>
         <StudioWorkspace
+          ref={workspaceRef}
           projectId={projectId}
           initialBpm={bpm}
           initialKey={key}
           initialGenre={genre}
           onPersistBeforeGenerate={persistProject}
+          hideGenerationActionButtons
           tracks={
             project.referenceUploads?.length
               ? project.referenceUploads.map((url, i) => ({

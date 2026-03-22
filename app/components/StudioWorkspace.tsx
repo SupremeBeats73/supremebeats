@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useAuth } from "../context/AuthContext";
 import { useProjects } from "../context/ProjectsContext";
 import { useJobs } from "../context/JobsContext";
@@ -21,6 +28,14 @@ type StudioWorkspaceProps = {
   initialGenre?: string;
   /** Persist parent form (project row) before hitting /api/generate/music (reads DB). */
   onPersistBeforeGenerate?: () => Promise<void>;
+  /** Hide beat / full song / split stems buttons (use external generation cards). */
+  hideGenerationActionButtons?: boolean;
+};
+
+export type StudioWorkspaceHandle = {
+  generateBeat: () => Promise<void>;
+  generateFullSong: () => Promise<void>;
+  splitStems: () => Promise<void>;
 };
 
 type WaveSurferLike = {
@@ -31,15 +46,20 @@ type WaveSurferLike = {
   destroy: () => void;
 };
 
-export default function StudioWorkspace({
-  tracks = [],
-  onGenerated,
-  projectId,
-  initialBpm,
-  initialKey,
-  initialGenre,
-  onPersistBeforeGenerate,
-}: StudioWorkspaceProps) {
+const StudioWorkspace = forwardRef<StudioWorkspaceHandle, StudioWorkspaceProps>(
+  function StudioWorkspace(
+    {
+      tracks = [],
+      onGenerated,
+      projectId,
+      initialBpm,
+      initialKey,
+      initialGenre,
+      onPersistBeforeGenerate,
+      hideGenerationActionButtons = false,
+    },
+    ref
+  ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const wavesurferRefs = useRef<WaveSurferLike[]>([]);
   const initInFlightRef = useRef<Promise<void> | null>(null);
@@ -323,13 +343,40 @@ export default function StudioWorkspace({
       setError("Project id is required to split stems.");
       return;
     }
+    if (!user?.id) {
+      setError("You must be signed in to split stems.");
+      return;
+    }
+    const stemsJobType = assetKindToJobType("stems");
+    if (!stemsJobType) {
+      setError("Stems job type is not configured.");
+      return;
+    }
+    const stemCost = JOB_CREDIT_COST[stemsJobType];
+    if (!creditsLoading && creditsRemaining < stemCost) {
+      setError(`You need at least ${stemCost} credits to split stems.`);
+      return;
+    }
+
     setIsSplitting(true);
     setError(null);
     setProgress(0);
 
     const clear = fakeProgress();
+    let jobId: string | undefined;
 
     try {
+      await onPersistBeforeGenerate?.();
+      const jobResult = await submitJob(user.id, projectId, stemsJobType);
+      if (!jobResult.success || !jobResult.jobId) {
+        setError(jobResult.error ?? "Could not start stems job");
+        clear();
+        setIsSplitting(false);
+        setProgress(0);
+        return;
+      }
+      jobId = jobResult.jobId;
+
       const res = await fetch("/api/split-stems", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -339,9 +386,12 @@ export default function StudioWorkspace({
       clear();
       setProgress(100);
       if (!res.ok || !data.stems) {
-        setError(data.error ?? "Stem split failed");
+        setError((data.error as string) ?? "Stem split failed");
+        if (jobId) failJob(jobId, true);
         return;
       }
+
+      if (jobId) completeJob(jobId);
 
       // Create additional lanes for each returned stem
       if (!containerRef.current) return;
@@ -367,9 +417,11 @@ export default function StudioWorkspace({
         ws.load(url);
         wavesurferRefs.current.push(ws);
       });
+      onGenerated?.({});
     } catch (e) {
       clear();
       setError(e instanceof Error ? e.message : "Stem split failed");
+      if (jobId) failJob(jobId, true);
     } finally {
       setTimeout(() => {
         setIsSplitting(false);
@@ -377,6 +429,21 @@ export default function StudioWorkspace({
       }, 600);
     }
   };
+
+  const handleGenerateMusicRef = useRef(handleGenerateMusic);
+  handleGenerateMusicRef.current = handleGenerateMusic;
+  const handleSplitStemsRef = useRef(handleSplitStems);
+  handleSplitStemsRef.current = handleSplitStems;
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      generateBeat: () => handleGenerateMusicRef.current("beat"),
+      generateFullSong: () => handleGenerateMusicRef.current("full_song"),
+      splitStems: () => handleSplitStemsRef.current(),
+    }),
+    []
+  );
 
   const isBusy = isGenerating || isSplitting;
 
@@ -530,39 +597,43 @@ export default function StudioWorkspace({
               </div>
             </div>
           )}
-          <button
-            type="button"
-            onClick={handleSplitStems}
-            disabled={isBusy}
-            className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-[#6E2CF2] bg-transparent px-4 py-3 text-sm font-semibold text-[#6E2CF2] sm:py-2 shadow-[0_0_18px_rgba(110,44,242,0.5)] transition hover:bg-[#6E2CF2]/10 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isSplitting ? "Splitting Stems…" : "Split Stems"}
-          </button>
+          {!hideGenerationActionButtons && (
+            <>
+              <button
+                type="button"
+                onClick={handleSplitStems}
+                disabled={isBusy}
+                className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-[#6E2CF2] bg-transparent px-4 py-3 text-sm font-semibold text-[#6E2CF2] shadow-[0_0_18px_rgba(110,44,242,0.5)] transition hover:bg-[#6E2CF2]/10 disabled:cursor-not-allowed disabled:opacity-60 sm:py-2"
+              >
+                {isSplitting ? "Splitting Stems…" : "Split Stems"}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleGenerateMusic("beat")}
+                disabled={
+                  isGenerating ||
+                  (creditsLoading ? false : creditsRemaining < JOB_CREDIT_COST.beat)
+                }
+                className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-[#6E2CF2] px-4 py-3 text-sm font-semibold text-white shadow-[0_0_24px_rgba(110,44,242,0.9)] transition hover:bg-[#8242ff] disabled:cursor-not-allowed disabled:opacity-60 sm:py-2"
+              >
+                {isGenerating && generatingKind === "beat" ? "Generating…" : "Generate beat"}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleGenerateMusic("full_song")}
+                disabled={
+                  isGenerating ||
+                  (creditsLoading ? false : creditsRemaining < JOB_CREDIT_COST.full_song)
+                }
+                className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-[var(--neon-green)]/40 bg-[var(--neon-green)]/10 px-4 py-3 text-sm font-semibold text-[var(--neon-green)] shadow-[0_0_18px_rgba(34,197,94,0.25)] transition hover:bg-[var(--neon-green)]/20 disabled:cursor-not-allowed disabled:opacity-60 sm:py-2"
+              >
+                {isGenerating && generatingKind === "full_song"
+                  ? "Generating…"
+                  : "Generate full song"}
+              </button>
+            </>
+          )}
           {error && <p className="text-[11px] text-red-400">{error}</p>}
-          <button
-            type="button"
-            onClick={() => void handleGenerateMusic("beat")}
-            disabled={
-              isGenerating ||
-              (creditsLoading ? false : creditsRemaining < JOB_CREDIT_COST.beat)
-            }
-            className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-[#6E2CF2] px-4 py-3 text-sm font-semibold text-white shadow-[0_0_24px_rgba(110,44,242,0.9)] transition hover:bg-[#8242ff] disabled:cursor-not-allowed disabled:opacity-60 sm:py-2"
-          >
-            {isGenerating && generatingKind === "beat" ? "Generating…" : "Generate beat"}
-          </button>
-          <button
-            type="button"
-            onClick={() => void handleGenerateMusic("full_song")}
-            disabled={
-              isGenerating ||
-              (creditsLoading ? false : creditsRemaining < JOB_CREDIT_COST.full_song)
-            }
-            className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-[var(--neon-green)]/40 bg-[var(--neon-green)]/10 px-4 py-3 text-sm font-semibold text-[var(--neon-green)] shadow-[0_0_18px_rgba(34,197,94,0.25)] transition hover:bg-[var(--neon-green)]/20 disabled:cursor-not-allowed disabled:opacity-60 sm:py-2"
-          >
-            {isGenerating && generatingKind === "full_song"
-              ? "Generating…"
-              : "Generate full song"}
-          </button>
           {!creditsLoading && creditsRemaining < 999999 && (
             <p className="text-[10px] text-white/50">
               {creditsRemaining} credit{creditsRemaining === 1 ? "" : "s"} left
@@ -572,5 +643,6 @@ export default function StudioWorkspace({
       </aside>
     </div>
   );
-}
+});
 
+export default StudioWorkspace;
