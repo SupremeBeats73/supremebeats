@@ -112,6 +112,31 @@ Sing it loud until dawn.`;
   return ensureCharRange(fallback, MIN_LYRICS, MAX_LYRICS, "[verse] La la la.");
 }
 
+/** Turn Replicate HTTP error body into a short message for logs + client. */
+function formatReplicateHttpError(status: number, errText: string): string {
+  const raw = (errText ?? "").trim();
+  let message = raw;
+  try {
+    const j = JSON.parse(raw) as { detail?: unknown; title?: unknown };
+    const d = typeof j.detail === "string" ? j.detail : "";
+    const t = typeof j.title === "string" ? j.title : "";
+    if (d || t) message = [t, d].filter(Boolean).join(": ");
+  } catch {
+    // keep raw text (often HTML or plain string)
+  }
+  if (!message) message = `HTTP ${status}`;
+  if (message.length > 420) message = `${message.slice(0, 417)}...`;
+
+  const hints: Partial<Record<number, string>> = {
+    401: "Invalid or missing API token — set REPLICATE_API_TOKEN in Vercel (Production).",
+    403: "Access denied — confirm the token can run minimax/music-1.5 on replicate.com.",
+    402: "Replicate billing required — add a card or credits at replicate.com/account/billing.",
+    429: "Replicate rate limit — wait and try again.",
+  };
+  const hint = hints[status];
+  return hint ? `${message} (${hint})` : message;
+}
+
 function predictionOutputToUrl(output: unknown): string | null {
   if (typeof output === "string" && output.startsWith("http")) return output;
   if (Array.isArray(output) && typeof output[0] === "string" && output[0].startsWith("http")) {
@@ -274,10 +299,16 @@ export async function POST(request: Request) {
 
     if (!createRes.ok) {
       const errText = await createRes.text();
-      await updateAssetFailure("Replicate API error: " + (errText || createRes.statusText));
+      const userMessage = formatReplicateHttpError(createRes.status, errText);
+      console.error(
+        "[generate/music] Replicate create prediction failed",
+        createRes.status,
+        errText.slice(0, 2000)
+      );
+      await updateAssetFailure("Replicate API error: " + userMessage);
       return NextResponse.json(
-        { success: false, error: "Replicate request failed" },
-        { status: 502 }
+        { success: false, error: userMessage },
+        { status: createRes.status === 401 || createRes.status === 403 ? 401 : 502 }
       );
     }
 
