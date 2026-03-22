@@ -23,6 +23,8 @@
 # misc
 .DS_Store
 *.pem
+# local scratch / notes (not for repo)
+old_studio.txt
 
 # debug
 npm-debug.log*
