@@ -839,7 +839,7 @@ This is the hook — big, memorable, repeat it twice.`;
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6">
-      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <Link
             href="/studio"
@@ -866,16 +866,8 @@ This is the hook — big, memorable, repeat it twice.`;
         </div>
       </div>
 
-      <section className="mb-10 rounded-2xl border border-[#6E2CF2]/25 bg-[#0a0810] p-6 shadow-[0_0_32px_rgba(110,44,242,0.15)]">
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
-          Generate
-        </h2>
-        <p className="mb-6 text-xs text-[var(--muted)]">
-          Your track was configured when you created this project. Pick beat or full song, then
-          generate — we sync settings to the server automatically.
-        </p>
-
-        <div className="mb-8 grid grid-cols-2 gap-3">
+      <section className="mb-10 rounded-2xl border border-[#6E2CF2]/25 bg-[#0a0810] p-5 shadow-[0_0_32px_rgba(110,44,242,0.15)] sm:p-6">
+        <div className="mb-4 grid grid-cols-2 gap-3">
           <button
             type="button"
             onClick={() => setMusicTab("beat")}
@@ -986,10 +978,10 @@ This is the hook — big, memorable, repeat it twice.`;
         </div>
       </section>
 
-      {/* Mix: transport + timeline + version history (no duplicate BPM/Key sidebar) */}
+      {/* Waveform + version history */}
       <section className="mb-10 rounded-2xl border border-white/10 bg-[#08060c]/90 p-4 sm:p-6">
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
-          Mix &amp; generate
+          Timeline &amp; versions
         </h2>
         <StudioWorkspace
           ref={workspaceRef}

@@ -8,9 +8,9 @@ const REPLICATE_MINIMAX_MUSIC_PREDICTIONS =
 const POLL_INTERVAL_MS = 2000;
 const POLL_MAX_WAIT_MS = 300_000; // 5 min — async music jobs
 
-/** MiniMax Music 1.5 — descriptive prompt budget (optional details trimmed first; core settings never dropped). */
+/** Replicate MiniMax Music API — prompt must be 10–300 characters. */
 const MIN_MUSIC_PROMPT = 10;
-const MAX_MUSIC_PROMPT = 600;
+const MAX_MUSIC_PROMPT = 300;
 const MIN_LYRICS = 10;
 const MAX_LYRICS = 600;
 
@@ -40,13 +40,6 @@ type ProjectVersionInsertRow = {
   asset_type: string;
 };
 
-function asStringArray(v: unknown): string[] {
-  if (Array.isArray(v)) {
-    return v.filter((x): x is string => typeof x === "string");
-  }
-  return [];
-}
-
 function ensureCharRange(text: string, min: number, max: number, filler: string): string {
   let s = text.trim().replace(/\s+/gim, " ");
   if (s.length > max) {
@@ -60,35 +53,6 @@ function ensureCharRange(text: string, min: number, max: number, filler: string)
     s = `${s}.`;
   }
   return s.slice(0, max);
-}
-
-/** Production texture hints from genre (natural language for MiniMax). */
-function genreProductionTexture(genreRaw: string): string {
-  const g = genreRaw.trim().toLowerCase();
-  if (!g) return "professional mix, clear low end, polished production";
-  if (g.includes("lo-fi") || g.includes("lofi") || g.includes("chillhop"))
-    return "soft drums, vinyl texture, warm tape saturation, relaxed pocket, mellow dynamics";
-  if (g.includes("trap"))
-    return "heavy 808s, crisp hi-hats, punchy drums, dark aggressive energy";
-  if (g.includes("drill"))
-    return "sliding 808s, sparse dark melodies, punchy drums, UK drill energy";
-  if (g.includes("afro"))
-    return "percussive grooves, warm low end, melodic hooks, Afrobeats bounce";
-  if (g.includes("hip-hop") || g.includes("hip hop") || g.includes("hiphop"))
-    return "swing groove, punchy drums, warm bass, sample-friendly pocket";
-  if (g.includes("r&b") || g.includes("rnb") || g.includes("r and b"))
-    return "smooth chords, intimate groove, silky highs, polished vocal-ready mix";
-  if (g.includes("pop"))
-    return "bright mix, catchy energy, wide chorus, radio-ready clarity";
-  if (g.includes("edm") || g.includes("house") || g.includes("electronic") || g.includes("dance"))
-    return "wide stereo, driving four-on-the-floor energy, club-ready impact";
-  if (g.includes("rock"))
-    return "live-band energy, gritty guitars, driving drums, powerful dynamics";
-  if (g.includes("jazz"))
-    return "swing feel, warm upright bass, brushed or light drums, harmonic richness";
-  if (g.includes("ambient") || g.includes("cinematic"))
-    return "spacious reverb, evolving pads, subtle motion, film-score depth";
-  return "professional mix, clear low end, polished modern production";
 }
 
 const STUDIO_PROMPT_META_PREFIX = "SBMETA_JSON";
@@ -118,141 +82,38 @@ function unpackStudioPromptMeta(full: string | null | undefined): {
   }
 }
 
+const PROMPT_FALLBACK_MIN = "Instrumental beat";
+
 /**
- * Single descriptive prompt for MiniMax Music 1.5.
- * Core block (genre, BPM, key, mood, vocal style for full song) is NEVER removed when trimming;
- * only optional tail (texture, lyrics excerpt, meta, notes) is dropped to fit MAX_MUSIC_PROMPT.
+ * MiniMax Music prompt for Replicate: strictly 10–300 characters.
+ * Priority: track description (user text after SBMETA line), then genre, mood, BPM, key.
  */
-function buildDescriptiveMinimaxPrompt(row: ProjectRow, kind: "beat" | "full_song"): string {
-  const genre = row.genre?.trim() || "Electronic";
-  const bpm =
-    Number.isFinite(row.bpm) && row.bpm > 0 ? Math.min(300, Math.max(40, Math.round(row.bpm))) : null;
-  const keyStr = row.key?.trim();
-  const mood = row.mood?.trim();
-  const vocalStyle = row.vocal_style?.trim();
-  const { meta, direction: directionRaw } = unpackStudioPromptMeta(row.prompt);
-  /** User track description (body after SBMETA line) — primary creative direction. */
+function buildDescriptiveMinimaxPrompt(row: ProjectRow, _kind: "beat" | "full_song"): string {
+  const { direction: directionRaw } = unpackStudioPromptMeta(row.prompt);
   const trackDescription = directionRaw.trim();
-  const projectName = row.name?.trim();
-  const durationSec =
-    Number.isFinite(row.duration) && row.duration > 0
-      ? Math.min(600, Math.max(8, Math.round(row.duration)))
+  const genre = row.genre?.trim() ?? "";
+  const mood = row.mood?.trim() ?? "";
+  const keyStr = row.key?.trim() ?? "";
+  const bpm =
+    Number.isFinite(row.bpm) && row.bpm > 0
+      ? Math.min(300, Math.max(40, Math.round(row.bpm)))
       : null;
-  const inst = asStringArray(row.instruments);
-  const instPhrase = inst.length ? inst.slice(0, 10).join(", ") : "";
 
-  const texture = genreProductionTexture(genre);
+  const parts: string[] = [];
+  if (trackDescription) parts.push(trackDescription);
+  if (genre) parts.push(genre);
+  if (mood) parts.push(`${mood} mood`);
+  if (bpm != null) parts.push(`${bpm} BPM`);
+  if (keyStr) parts.push(`${keyStr} key`);
 
-  const beatClosing =
-    "Instrumental only, no vocals, loop-ready beat.";
-  const fullSongClosing =
-    "Full song with vocals and song structure including verse and chorus.";
-
-  /** Always included first — matches user-facing studio choices. */
-  const coreSegments: string[] = [];
-  if (kind === "beat") {
-    coreSegments.push(`${genre} instrumental beat`);
-  } else {
-    coreSegments.push(`${genre} full song`);
-  }
-  if (bpm != null) {
-    coreSegments.push(`${bpm} BPM`);
-  }
-  if (keyStr) {
-    coreSegments.push(`${keyStr} key`);
-  }
-  if (mood) {
-    coreSegments.push(`${mood} mood`);
-  }
-  if (kind === "beat") {
-    coreSegments.push("no vocals");
-  } else if (vocalStyle) {
-    coreSegments.push(`vocal style: ${vocalStyle}`);
-  }
-
-  const coreBlock = coreSegments.join(", ").replace(/\s+/g, " ").trim();
-
-  /** Lyrics snippet for the music prompt (full lyrics still sent via `lyrics` input). */
-  let lyricsForPrompt: string | null = null;
-  if (kind === "full_song") {
-    const L = row.lyrics?.trim() ?? "";
-    if (L.length >= MIN_LYRICS) {
-      const one = L.replace(/\s+/g, " ");
-      const cap = 280;
-      lyricsForPrompt =
-        one.length <= cap
-          ? `User lyrics to perform (use [verse] and [chorus] sections): ${one}`
-          : `User lyrics to perform (use [verse] and [chorus] sections): ${one.slice(0, cap - 3)}...`;
-    }
-  }
-
-  /**
-   * Optional segments (after track description + technical core): drop from the END when over budget.
-   * Order: texture, lyrics excerpt, instruments, structure, artist, reference hint, duration, title.
-   */
-  const optionalOrdered: string[] = [];
-  optionalOrdered.push(texture);
-  if (lyricsForPrompt) optionalOrdered.push(lyricsForPrompt);
-  if (instPhrase) optionalOrdered.push(`instruments: ${instPhrase}`);
-  const structure = meta.structure?.trim();
-  if (structure) optionalOrdered.push(`song structure: ${structure}`);
-  const artistRef = meta.artist?.trim();
-  if (artistRef) optionalOrdered.push(`artist sound reference: ${artistRef}`);
-  if (meta.hasReference === "1") {
-    optionalOrdered.push(
-      "reference audio uploaded for this project — match groove, tone, and vibe to that reference"
-    );
-  }
-  if (durationSec != null) optionalOrdered.push(`target length about ${durationSec} seconds`);
-  if (projectName && projectName.toLowerCase() !== "untitled project") {
-    optionalOrdered.push(`project title vibe: ${projectName}`);
-  }
-
-  const closing = kind === "beat" ? beatClosing : fullSongClosing;
-
-  const joinAll = (opts: string[], desc: string) => {
-    const parts = [desc, coreBlock, ...opts.filter(Boolean), closing].filter(Boolean);
-    return parts.join(", ").replace(/\s+/g, " ").trim();
-  };
-
-  let opts = [...optionalOrdered];
-  let desc = trackDescription;
-  let prompt = joinAll(opts, desc);
-  while (prompt.length > MAX_MUSIC_PROMPT && opts.length > 0) {
-    opts.pop();
-    prompt = joinAll(opts, desc);
-  }
-
-  let trimGuard = 0;
-  while (prompt.length > MAX_MUSIC_PROMPT && desc.length > 0 && trimGuard < 80) {
-    trimGuard += 1;
-    const over = prompt.length - MAX_MUSIC_PROMPT;
-    const nextLen = Math.max(0, desc.length - over - 3);
-    if (nextLen <= 0) {
-      desc = "";
-      break;
-    }
-    desc = desc.slice(0, nextLen).trimEnd();
-    if (desc.length > 0) desc = `${desc}...`;
-    prompt = joinAll(opts, desc);
-  }
+  let prompt = parts.join(", ").replace(/\s+/g, " ").trim();
 
   if (prompt.length > MAX_MUSIC_PROMPT) {
-    const suffix = `, ${closing}`;
-    const headBudget = MAX_MUSIC_PROMPT - suffix.length;
-    const fixedCore = [desc, coreBlock].filter(Boolean).join(", ").replace(/\s+/g, " ").trim();
-    let head = fixedCore;
-    if (head.length > headBudget) {
-      head = head.slice(0, Math.max(MIN_MUSIC_PROMPT, headBudget)).replace(/[, ]+$/, "");
-    }
-    prompt = `${head}${suffix}`.replace(/\s+/g, " ").trim().slice(0, MAX_MUSIC_PROMPT);
+    prompt = prompt.slice(0, MAX_MUSIC_PROMPT);
   }
 
   if (prompt.length < MIN_MUSIC_PROMPT) {
-    prompt = `${prompt}, high quality stereo mix`.slice(0, MAX_MUSIC_PROMPT);
-  }
-  while (prompt.length < MIN_MUSIC_PROMPT) {
-    prompt = `${prompt}.`;
+    prompt = PROMPT_FALLBACK_MIN.slice(0, MAX_MUSIC_PROMPT);
   }
 
   return prompt.slice(0, MAX_MUSIC_PROMPT);
@@ -458,8 +319,9 @@ export async function POST(request: Request) {
 
   try {
     console.log(
-      "[generate/music] Final MiniMax music prompt",
-      `(${musicPrompt.length} chars):`,
+      "[generate/music] Final MiniMax music prompt (Replicate)",
+      `length=${musicPrompt.length}`,
+      "content=",
       musicPrompt
     );
     console.log(
