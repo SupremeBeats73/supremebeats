@@ -131,7 +131,8 @@ function buildDescriptiveMinimaxPrompt(row: ProjectRow, kind: "beat" | "full_son
   const mood = row.mood?.trim();
   const vocalStyle = row.vocal_style?.trim();
   const { meta, direction: directionRaw } = unpackStudioPromptMeta(row.prompt);
-  const direction = directionRaw.trim();
+  /** User track description (body after SBMETA line) — primary creative direction. */
+  const trackDescription = directionRaw.trim();
   const projectName = row.name?.trim();
   const durationSec =
     Number.isFinite(row.duration) && row.duration > 0
@@ -186,9 +187,8 @@ function buildDescriptiveMinimaxPrompt(row: ProjectRow, kind: "beat" | "full_son
   }
 
   /**
-   * Optional segments in order: keep early items, drop from the END when over budget.
-   * (Texture and lyrics stay as late as possible in the “optional” list… we want texture early.)
-   * Order: texture + production first, then lyrics, instruments, meta, notes, duration, title last.
+   * Optional segments (after track description + technical core): drop from the END when over budget.
+   * Order: texture, lyrics excerpt, instruments, structure, artist, reference hint, duration, title.
    */
   const optionalOrdered: string[] = [];
   optionalOrdered.push(texture);
@@ -203,7 +203,6 @@ function buildDescriptiveMinimaxPrompt(row: ProjectRow, kind: "beat" | "full_son
       "reference audio uploaded for this project — match groove, tone, and vibe to that reference"
     );
   }
-  if (direction) optionalOrdered.push(`additional direction: ${direction}`);
   if (durationSec != null) optionalOrdered.push(`target length about ${durationSec} seconds`);
   if (projectName && projectName.toLowerCase() !== "untitled project") {
     optionalOrdered.push(`project title vibe: ${projectName}`);
@@ -211,23 +210,38 @@ function buildDescriptiveMinimaxPrompt(row: ProjectRow, kind: "beat" | "full_son
 
   const closing = kind === "beat" ? beatClosing : fullSongClosing;
 
-  const joinAll = (opts: string[]) => {
-    const parts = [coreBlock, ...opts.filter(Boolean), closing].filter(Boolean);
+  const joinAll = (opts: string[], desc: string) => {
+    const parts = [desc, coreBlock, ...opts.filter(Boolean), closing].filter(Boolean);
     return parts.join(", ").replace(/\s+/g, " ").trim();
   };
 
   let opts = [...optionalOrdered];
-  let prompt = joinAll(opts);
+  let desc = trackDescription;
+  let prompt = joinAll(opts, desc);
   while (prompt.length > MAX_MUSIC_PROMPT && opts.length > 0) {
     opts.pop();
-    prompt = joinAll(opts);
+    prompt = joinAll(opts, desc);
+  }
+
+  let trimGuard = 0;
+  while (prompt.length > MAX_MUSIC_PROMPT && desc.length > 0 && trimGuard < 80) {
+    trimGuard += 1;
+    const over = prompt.length - MAX_MUSIC_PROMPT;
+    const nextLen = Math.max(0, desc.length - over - 3);
+    if (nextLen <= 0) {
+      desc = "";
+      break;
+    }
+    desc = desc.slice(0, nextLen).trimEnd();
+    if (desc.length > 0) desc = `${desc}...`;
+    prompt = joinAll(opts, desc);
   }
 
   if (prompt.length > MAX_MUSIC_PROMPT) {
-    const sep = ", ";
     const suffix = `, ${closing}`;
     const headBudget = MAX_MUSIC_PROMPT - suffix.length;
-    let head = coreBlock;
+    const fixedCore = [desc, coreBlock].filter(Boolean).join(", ").replace(/\s+/g, " ").trim();
+    let head = fixedCore;
     if (head.length > headBudget) {
       head = head.slice(0, Math.max(MIN_MUSIC_PROMPT, headBudget)).replace(/[, ]+$/, "");
     }

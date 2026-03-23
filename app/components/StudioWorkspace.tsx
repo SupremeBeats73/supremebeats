@@ -30,6 +30,8 @@ type StudioWorkspaceProps = {
   onPersistBeforeGenerate?: () => Promise<void>;
   /** Hide beat / full song / split stems buttons (use external generation cards). */
   hideGenerationActionButtons?: boolean;
+  /** Hide right-hand BPM/Key/Genre/Chords sidebar (e.g. Music Studio form owns those fields). */
+  hideGenerationSidebar?: boolean;
 };
 
 export type StudioWorkspaceHandle = {
@@ -57,6 +59,7 @@ const StudioWorkspace = forwardRef<StudioWorkspaceHandle, StudioWorkspaceProps>(
       initialGenre,
       onPersistBeforeGenerate,
       hideGenerationActionButtons = false,
+      hideGenerationSidebar = false,
     },
     ref
   ) {
@@ -448,7 +451,11 @@ const StudioWorkspace = forwardRef<StudioWorkspaceHandle, StudioWorkspaceProps>(
   const isBusy = isGenerating || isSplitting;
 
   return (
-    <div className="glass-panel glass-panel--status relative grid min-w-0 gap-4 rounded-2xl p-4 text-white sm:gap-6 sm:rounded-3xl sm:p-6 md:grid-cols-[1.7fr_1fr]">
+    <div
+      className={`glass-panel glass-panel--status relative grid min-w-0 gap-4 rounded-2xl p-4 text-white sm:gap-6 sm:rounded-3xl sm:p-6 ${
+        hideGenerationSidebar ? "md:grid-cols-1" : "md:grid-cols-[1.7fr_1fr]"
+      }`}
+    >
       {/* Overlay while generating */}
       {isBusy && (
         <div className="glass-panel absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 rounded-3xl">
@@ -524,9 +531,21 @@ const StudioWorkspace = forwardRef<StudioWorkspaceHandle, StudioWorkspaceProps>(
             className="flex flex-col rounded-xl bg-gradient-to-br from-[#111111] via-[#141018] to-[#1A1A1A] p-3"
           />
         </div>
+
+        {hideGenerationSidebar && (
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            {error && <p className="mb-2 text-xs text-red-400">{error}</p>}
+            {!creditsLoading && creditsRemaining < 999999 && (
+              <p className="text-[11px] text-white/50">
+                {creditsRemaining} credit{creditsRemaining === 1 ? "" : "s"} left
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Right: generation sidebar */}
+      {!hideGenerationSidebar && (
       <aside className="flex flex-col justify-between rounded-2xl border border-white/10 bg-white/5 p-4 shadow-[0_0_24px_rgba(110,44,242,0.6)]">
         <div>
           <h2 className="mb-1 text-sm font-semibold text-white">Generation Sidebar</h2>
@@ -641,6 +660,7 @@ const StudioWorkspace = forwardRef<StudioWorkspaceHandle, StudioWorkspaceProps>(
           )}
         </div>
       </aside>
+      )}
     </div>
   );
 });

@@ -93,7 +93,7 @@ export default function YoutubeStudioContent() {
         </p>
         <div className="mb-6 flex flex-wrap gap-3">
           <Link
-            href="/dashboard/studio/new"
+            href="/studio/music"
             className="rounded-xl bg-[var(--neon-green)] px-6 py-3 text-sm font-semibold text-black hover:bg-[var(--neon-green-dim)]"
           >
             New project

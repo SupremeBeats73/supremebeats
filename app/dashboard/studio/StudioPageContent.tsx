@@ -167,7 +167,7 @@ export default function StudioPageContent() {
         </p>
         <div className="mb-8 flex flex-wrap gap-4">
           <Link
-            href="/dashboard/studio/new"
+            href="/studio/music"
             className="rounded-xl bg-[var(--neon-green)] px-6 py-3 text-sm font-semibold text-black transition-all hover:bg-[var(--neon-green-dim)] hover:shadow-[0_0_24px_var(--neon-glow)]"
           >
             New project
@@ -236,7 +236,7 @@ export default function StudioPageContent() {
             View all projects
           </Link>
           <Link
-            href="/dashboard/studio/new"
+            href="/studio/music"
             className="rounded-xl border border-white/20 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/5"
           >
             Create a new project
@@ -390,7 +390,7 @@ export default function StudioPageContent() {
             Project detail
           </Link>
           <Link
-            href="/dashboard/studio/new"
+            href="/studio/music"
             className="inline-flex min-h-[44px] items-center rounded-xl bg-white/10 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/15"
           >
             New project

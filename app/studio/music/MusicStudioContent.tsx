@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useProjects } from "../../context/ProjectsContext";
@@ -103,6 +103,12 @@ function nearestSongLength(sec: number): number {
   );
 }
 
+const NEW_PROJECT_DESC_PLACEHOLDER =
+  "Describe exactly what you want — e.g. Chill lo-fi beat with piano, vinyl crackle, 90 BPM, C minor, no vocals, relaxed and dreamy mood";
+
+const TRACK_DESC_HELPER =
+  "The more detail you give, the better your generation will be.";
+
 type VersionRow = {
   id: string;
   label: string | null;
@@ -111,6 +117,7 @@ type VersionRow = {
 };
 
 export default function MusicStudioContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const projectId = searchParams.get("project");
   const { user } = useAuth();
@@ -120,6 +127,7 @@ export default function MusicStudioContent() {
     getProject,
     updateProject,
     refreshProjects,
+    createProject,
   } = useProjects();
 
   const project = projectId ? getProject(projectId) : undefined;
@@ -139,7 +147,14 @@ export default function MusicStudioContent() {
   const [lyricsDetailsEnabled, setLyricsDetailsEnabled] = useState(false);
   const [lyrics, setLyrics] = useState("");
   const [vocalStyleSelect, setVocalStyleSelect] = useState("Male Rap");
-  const [additionalDirection, setAdditionalDirection] = useState("");
+  /** Creative brief stored after SBMETA line in `prompt` — sent first to MiniMax. */
+  const [trackDescription, setTrackDescription] = useState("");
+  const [editingTrackDescription, setEditingTrackDescription] = useState(false);
+  const [editingProjectName, setEditingProjectName] = useState(false);
+  const [creatingName, setCreatingName] = useState("");
+  const [creatingDescription, setCreatingDescription] = useState("");
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [createSubmitting, setCreateSubmitting] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">(
     "idle"
   );
@@ -181,7 +196,7 @@ export default function MusicStudioContent() {
     setDurationState(nearestSongLength(Number.isFinite(d) ? d : 120));
 
     const { meta, rest } = unpackStudioPromptMeta(project.prompt ?? "");
-    setAdditionalDirection(rest);
+    setTrackDescription(rest);
     setMusicTab(meta.tab === "full_song" ? "full_song" : "beat");
     setSongStructure(
       (SONG_STRUCTURES as readonly string[]).includes(meta.structure ?? "")
@@ -207,7 +222,54 @@ export default function MusicStudioContent() {
     setLyrics(project.lyrics ?? "");
     const inst = Array.isArray(project.instruments) ? project.instruments : [];
     setInstruments(INSTRUMENT_OPTIONS.filter((x) => inst.includes(x)));
+    setEditingProjectName(false);
+    setEditingTrackDescription(false);
   }, [project]);
+
+  const handleCreateProject = useCallback(async () => {
+    setCreateError(null);
+    if (!creatingName.trim()) {
+      setCreateError("Project name is required.");
+      return;
+    }
+    if (!creatingDescription.trim()) {
+      setCreateError("Track description is required.");
+      return;
+    }
+    setCreateSubmitting(true);
+    try {
+      const promptBody = packStudioPromptMeta(
+        {
+          tab: "beat",
+          structure: "Verse-Chorus",
+          artist: "",
+          lyricsDetails: "0",
+          vocalLine: "Male Rap",
+          hasReference: "0",
+        },
+        creatingDescription.trim()
+      );
+      const newProject = await createProject({
+        name: creatingName.trim(),
+        genre: "Electronic",
+        bpm: 120,
+        key: "C minor",
+        mood: "",
+        duration: 120,
+        instruments: [],
+        prompt: promptBody,
+        referenceUploads: [],
+      });
+      await refreshProjects();
+      router.push(`/studio/music?project=${newProject.id}`);
+      setCreatingName("");
+      setCreatingDescription("");
+    } catch (e) {
+      setCreateError(e instanceof Error ? e.message : "Could not create project.");
+    } finally {
+      setCreateSubmitting(false);
+    }
+  }, [creatingName, creatingDescription, createProject, refreshProjects, router]);
 
   useEffect(() => {
     if (!projectId || !user?.id) {
@@ -247,7 +309,7 @@ export default function MusicStudioContent() {
       vocalLine: vocalStyleSelect,
       hasReference: p?.referenceUploads?.length ? "1" : "0",
     };
-    const promptForDb = packStudioPromptMeta(meta, additionalDirection.trim());
+    const promptForDb = packStudioPromptMeta(meta, trackDescription.trim());
 
     let vocalStyleOut: string | undefined;
     if (musicTab === "full_song" && lyricsDetailsEnabled) {
@@ -283,7 +345,7 @@ export default function MusicStudioContent() {
     artistReference,
     lyricsDetailsEnabled,
     vocalStyleSelect,
-    additionalDirection,
+    trackDescription,
     lyrics,
     instruments,
     updateProject,
@@ -327,17 +389,54 @@ export default function MusicStudioContent() {
         <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--neon-green)]">
           Music Studio
         </p>
-        <h1 className="mb-2 text-2xl font-bold text-white">Open a project</h1>
+        <h1 className="mb-2 text-2xl font-bold text-white">Create or open a project</h1>
         <p className="mb-6 text-sm text-[var(--muted)]">
-          Create a new project or pick one to generate beats and full songs.
+          Start with a name and track description — then tune genre, mood, BPM, and key in the studio.
         </p>
-        <div className="mb-8 flex flex-wrap gap-3">
-          <Link
-            href="/dashboard/studio/new"
-            className="rounded-xl bg-[var(--neon-green)] px-6 py-3 text-sm font-semibold text-black transition hover:bg-[var(--neon-green-dim)]"
-          >
+
+        <div className="mb-10 rounded-2xl border border-[#6E2CF2]/25 bg-[#0a0810] p-6 shadow-[0_0_32px_rgba(110,44,242,0.12)]">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
             New project
-          </Link>
+          </h2>
+          <div className="space-y-4">
+            <div>
+              <label className="mb-2 block text-xs font-medium text-[var(--muted)]">
+                Project name <span className="text-red-400">*</span>
+              </label>
+              <input
+                className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-3 text-sm text-white placeholder:text-[var(--muted)] focus:border-[#6E2CF2]/50 focus:outline-none focus:ring-1 focus:ring-[#6E2CF2]/30"
+                value={creatingName}
+                onChange={(e) => setCreatingName(e.target.value)}
+                placeholder="My track"
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-xs font-medium text-[var(--muted)]">
+                Track description <span className="text-red-400">*</span>
+              </label>
+              <textarea
+                className="min-h-[140px] w-full rounded-lg border border-white/10 bg-black/50 px-3 py-3 text-sm text-white placeholder:text-[var(--muted)] focus:border-[#6E2CF2]/50 focus:outline-none focus:ring-1 focus:ring-[#6E2CF2]/30"
+                value={creatingDescription}
+                onChange={(e) => setCreatingDescription(e.target.value)}
+                placeholder={NEW_PROJECT_DESC_PLACEHOLDER}
+                required
+              />
+              <p className="mt-2 text-xs text-[var(--muted)]">{TRACK_DESC_HELPER}</p>
+            </div>
+            {createError && <p className="text-sm text-red-400">{createError}</p>}
+            <button
+              type="button"
+              disabled={createSubmitting}
+              onClick={() => void handleCreateProject()}
+              className="w-full rounded-xl bg-[var(--neon-green)] px-4 py-3 text-sm font-semibold text-black transition hover:bg-[var(--neon-green-dim)] disabled:opacity-60"
+            >
+              {createSubmitting ? "Creating…" : "Create project"}
+            </button>
+          </div>
+        </div>
+
+        <div className="mb-8 flex flex-wrap gap-3">
           <Link
             href="/dashboard/projects"
             className="rounded-xl border border-white/20 px-6 py-3 text-sm font-semibold text-white hover:bg-white/5"
@@ -423,17 +522,55 @@ This is the hook — big, memorable, repeat it twice.`;
   return (
     <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6">
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
-        <div>
+        <div className="min-w-0 flex-1">
           <Link
             href="/studio"
             className="mb-2 inline-block text-xs text-[var(--muted)] hover:text-[var(--neon-green)]"
           >
             ← Studio hub
           </Link>
-          <h1 className="text-2xl font-bold text-white sm:text-3xl">Music Studio</h1>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            {project.name} · single-page generation & export
-          </p>
+          {editingProjectName ? (
+            <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <input
+                className={`${inputClass} max-w-md py-2.5 text-base`}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                aria-label="Project name"
+              />
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => void handleSaveProject().then(() => setEditingProjectName(false))}
+                  disabled={saveState === "saving"}
+                  className="rounded-lg bg-[var(--neon-green)] px-3 py-2 text-xs font-semibold text-black hover:bg-[var(--neon-green-dim)] disabled:opacity-60"
+                >
+                  Save name
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setName(project.name);
+                    setEditingProjectName(false);
+                  }}
+                  className="rounded-lg border border-white/20 px-3 py-2 text-xs text-white hover:bg-white/5"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <h1 className="text-2xl font-bold text-white sm:text-3xl">{project.name}</h1>
+              <p className="mt-1 text-sm text-[var(--muted)]">Music Studio · generation &amp; export</p>
+              <button
+                type="button"
+                onClick={() => setEditingProjectName(true)}
+                className="mt-2 text-xs font-medium text-[var(--neon-green)] hover:underline"
+              >
+                Rename project
+              </button>
+            </>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
@@ -443,7 +580,7 @@ This is the hook — big, memorable, repeat it twice.`;
             Project detail
           </Link>
           <Link
-            href="/dashboard/studio/new"
+            href="/studio/music"
             className="rounded-xl bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/15"
           >
             New project
@@ -475,8 +612,8 @@ This is the hook — big, memorable, repeat it twice.`;
           </div>
         </div>
         <p className="mb-6 text-xs text-[var(--muted)]">
-          Generations use these fields. Save before generating, or use Generate — we save
-          automatically first.
+          Your track description drives generation; technical settings below refine it. Save before
+          generating, or use Generate — we save automatically first.
         </p>
 
         {/* Tab toggles */}
@@ -506,20 +643,46 @@ This is the hook — big, memorable, repeat it twice.`;
         </div>
 
         <div key={musicTab} className="transition-opacity duration-300">
-          {/* Tier 1 */}
-          <div className="space-y-6">
-            <div>
-              <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
-                Project name
-              </label>
-              <input
-                className={`${inputClass} py-3 text-base`}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="My track"
-              />
+          {/* Track description (read-only + edit) */}
+          <div className="mb-8 rounded-xl border border-[#6E2CF2]/20 bg-black/35 p-4 sm:p-5">
+            <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                  Track description
+                </p>
+                <p className="mt-1 text-xs text-[var(--muted)]">{TRACK_DESC_HELPER}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingTrackDescription((v) => !v)}
+                className="shrink-0 rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white hover:border-[var(--neon-green)]/40 hover:text-[var(--neon-green)]"
+              >
+                {editingTrackDescription ? "Done" : "Edit"}
+              </button>
             </div>
+            {editingTrackDescription ? (
+              <textarea
+                className={`${inputClass} min-h-[140px] text-sm`}
+                value={trackDescription}
+                onChange={(e) => setTrackDescription(e.target.value)}
+                placeholder={NEW_PROJECT_DESC_PLACEHOLDER}
+              />
+            ) : (
+              <div className="rounded-lg border border-white/5 bg-black/40 px-3 py-3 text-sm leading-relaxed text-white/90">
+                {trackDescription.trim() ? (
+                  <p className="whitespace-pre-wrap">{trackDescription}</p>
+                ) : (
+                  <p className="text-[var(--muted)]">
+                    No description yet. Click <span className="text-white/80">Edit</span> to add
+                    what you want the AI to make.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
 
+          {/* Quick technical settings */}
+          <div className="space-y-6">
             <div>
               <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
                 Genre
@@ -709,17 +872,6 @@ This is the hook — big, memorable, repeat it twice.`;
                   </p>
                 </div>
 
-                <div>
-                  <label className="mb-2 block text-xs font-medium text-[var(--muted)]">
-                    Additional direction (optional)
-                  </label>
-                  <textarea
-                    className={`${inputClass} min-h-[72px]`}
-                    value={additionalDirection}
-                    onChange={(e) => setAdditionalDirection(e.target.value)}
-                    placeholder="Extra notes for the AI…"
-                  />
-                </div>
               </div>
             </div>
           </div>
@@ -869,10 +1021,10 @@ This is the hook — big, memorable, repeat it twice.`;
         </div>
       </section>
 
-      {/* Workspace: waveform + dual generate (sidebar) */}
-      <section className="mb-10">
+      {/* Mix: transport + timeline + version history (no duplicate BPM/Key sidebar) */}
+      <section className="mb-10 rounded-2xl border border-white/10 bg-[#08060c]/90 p-4 sm:p-6">
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
-          Mix & generate
+          Mix &amp; generate
         </h2>
         <StudioWorkspace
           ref={workspaceRef}
@@ -882,6 +1034,7 @@ This is the hook — big, memorable, repeat it twice.`;
           initialGenre={genreValue}
           onPersistBeforeGenerate={persistProject}
           hideGenerationActionButtons
+          hideGenerationSidebar
           tracks={
             project.referenceUploads?.length
               ? project.referenceUploads.map((url, i) => ({
@@ -905,37 +1058,36 @@ This is the hook — big, memorable, repeat it twice.`;
             })();
           }}
         />
-      </section>
 
-      {/* Versions + export */}
-      <section className="rounded-2xl border border-white/10 bg-[#08060c] p-6">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
-          Version history
-        </h2>
-        {versionsLoading ? (
-          <p className="text-sm text-[var(--muted)]">Loading versions…</p>
-        ) : versions.length === 0 ? (
-          <p className="text-sm text-[var(--muted)]">
-            No versions yet. Generate a beat or full song to create one.
-          </p>
-        ) : (
-          <ul className="divide-y divide-white/10 rounded-xl border border-white/10">
-            {versions.map((v) => (
-              <li
-                key={v.id}
-                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-              >
-                <div>
-                  <p className="text-sm text-white">{v.label ?? "Version"}</p>
-                  <p className="text-xs text-[var(--muted)]">
-                    {new Date(v.created_at).toLocaleString()} · {v.status ?? "—"}
-                  </p>
-                </div>
-                <VersionExportButton versionId={v.id} />
-              </li>
-            ))}
-          </ul>
-        )}
+        <div className="mt-8 border-t border-white/10 pt-6">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
+            Version history
+          </h3>
+          {versionsLoading ? (
+            <p className="text-sm text-[var(--muted)]">Loading versions…</p>
+          ) : versions.length === 0 ? (
+            <p className="text-sm text-[var(--muted)]">
+              No versions yet. Generate a beat or full song to create one.
+            </p>
+          ) : (
+            <ul className="divide-y divide-white/10 rounded-xl border border-white/10">
+              {versions.map((v) => (
+                <li
+                  key={v.id}
+                  className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                >
+                  <div>
+                    <p className="text-sm text-white">{v.label ?? "Version"}</p>
+                    <p className="text-xs text-[var(--muted)]">
+                      {new Date(v.created_at).toLocaleString()} · {v.status ?? "—"}
+                    </p>
+                  </div>
+                  <VersionExportButton versionId={v.id} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </section>
     </div>
   );
