@@ -161,12 +161,10 @@ function buildBeatStylePrompt(row: ProjectRow): string {
 }
 
 /**
- * Beat: `lyrics` must stay free of section tags so the model does not treat lines as sung lyrics.
+ * Beat: Replicate `lyrics` must be omitted or empty — MiniMax will sing any non-empty lyrics text.
  */
 function buildBeatLyricsField(): string {
-  const plain =
-    "Pure instrumental arrangement. No vocals, no singing, no lyrics. Drums, bass, and harmony only; beat and groove only.";
-  return ensureCharRange(plain, MIN_LYRICS, MAX_LYRICS, "Instrumental. No vocals. ");
+  return "";
 }
 
 /**
@@ -428,7 +426,7 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         input: {
           prompt: musicPrompt,
-          lyrics,
+          ...(lyrics ? { lyrics } : {}),
           audio_format: "mp3",
         },
       }),
