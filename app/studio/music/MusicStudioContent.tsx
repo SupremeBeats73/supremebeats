@@ -543,10 +543,14 @@ This is the hook — big, memorable, repeat it twice.`;
         <div className="mb-10 rounded-2xl border border-[#6E2CF2]/25 bg-[#0a0810] p-6 shadow-[0_0_32px_rgba(110,44,242,0.12)]">
           <div className="space-y-8">
             <div>
-              <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
+              <label
+                htmlFor="music-studio-project-name"
+                className="mb-2 block text-xs font-medium uppercase tracking-wider text-[var(--muted)]"
+              >
                 Project name <span className="text-red-400">*</span>
               </label>
               <input
+                id="music-studio-project-name"
                 className={`${inputClass} py-3 text-base`}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -555,10 +559,14 @@ This is the hook — big, memorable, repeat it twice.`;
             </div>
 
             <div>
-              <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
+              <label
+                htmlFor="music-studio-track-description"
+                className="mb-2 block text-xs font-medium uppercase tracking-wider text-[var(--muted)]"
+              >
                 Track description <span className="text-red-400">*</span>
               </label>
               <textarea
+                id="music-studio-track-description"
                 className={`${inputClass} min-h-[160px] text-base`}
                 value={trackDescription}
                 onChange={(e) => setTrackDescription(e.target.value)}
