@@ -82,70 +82,164 @@ function unpackStudioPromptMeta(full: string | null | undefined): {
   }
 }
 
-const PROMPT_FALLBACK_MIN = "Instrumental beat";
+const PROMPT_FALLBACK_MIN = "instrumental beat, no vocals, no singing";
+
+/** Bracket tags that MiniMax treats as lyrical sections — must not appear in beat style prompts. */
+const LYRIC_SECTION_TAG =
+  /\[(?:intro|verse|chorus|bridge|outro|hook|pre-?chorus|instrumental)\]/gi;
+
+function instrumentsPhrase(instruments: unknown): string {
+  if (!Array.isArray(instruments)) return "";
+  const parts = instruments
+    .filter((x): x is string => typeof x === "string")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return parts.length ? parts.join(", ") : "";
+}
+
+/** Remove section markers so beat prompts stay pure style guidance (MiniMax sings anything that looks like lyrics). */
+function stripLyricSectionTags(text: string): string {
+  return text.replace(LYRIC_SECTION_TAG, " ").replace(/\s+/g, " ").trim();
+}
+
+function bpmClamped(row: ProjectRow): number | null {
+  if (!Number.isFinite(row.bpm) || row.bpm <= 0) return null;
+  return Math.min(300, Math.max(40, Math.round(row.bpm)));
+}
 
 /**
- * MiniMax Music prompt for Replicate: strictly 10–300 characters.
- * Priority: track description (user text after SBMETA line), then genre, mood, BPM, key.
+ * Beat: `prompt` = style only (10–300). Never use [verse]/[chorus] etc. Always include "instrumental" and "no vocals".
  */
-function buildDescriptiveMinimaxPrompt(row: ProjectRow, _kind: "beat" | "full_song"): string {
+function buildBeatStylePrompt(row: ProjectRow): string {
   const { direction: directionRaw } = unpackStudioPromptMeta(row.prompt);
-  const trackDescription = directionRaw.trim();
+  const trackDescription = stripLyricSectionTags(directionRaw.trim());
   const genre = row.genre?.trim() ?? "";
   const mood = row.mood?.trim() ?? "";
   const keyStr = row.key?.trim() ?? "";
-  const bpm =
-    Number.isFinite(row.bpm) && row.bpm > 0
-      ? Math.min(300, Math.max(40, Math.round(row.bpm)))
-      : null;
+  const bpm = bpmClamped(row);
+  const inst = instrumentsPhrase(row.instruments);
 
   const parts: string[] = [];
   if (trackDescription) parts.push(trackDescription);
   if (genre) parts.push(genre);
   if (mood) parts.push(`${mood} mood`);
+  if (inst) parts.push(inst);
   if (bpm != null) parts.push(`${bpm} BPM`);
-  if (keyStr) parts.push(`${keyStr} key`);
+  if (keyStr) parts.push(keyStr);
 
-  let prompt = parts.join(", ").replace(/\s+/g, " ").trim();
+  let core = parts.join(", ").replace(/\s+/g, " ").trim();
+  const requiredBits: string[] = [];
+  if (!/\binstrumental\b/i.test(core)) requiredBits.push("instrumental");
+  if (!/\bno\s+vocals?\b/i.test(core)) requiredBits.push("no vocals");
+  const suffix = requiredBits.length ? requiredBits.join(", ") : "";
 
-  if (prompt.length > MAX_MUSIC_PROMPT) {
+  let prompt = core
+    ? suffix
+      ? `${core}, ${suffix}`.replace(/\s+/g, " ").trim()
+      : core
+    : suffix || PROMPT_FALLBACK_MIN;
+  prompt = prompt.replace(/^,\s*/, "").replace(/\s+/g, " ").trim();
+  if (prompt.length > MAX_MUSIC_PROMPT && core) {
+    const glue = suffix ? `, ${suffix}` : "";
+    const budget = Math.max(0, MAX_MUSIC_PROMPT - glue.length);
+    core = core.slice(0, budget).replace(/[,\s]+$/g, "").trim();
+    prompt = (core + glue).replace(/\s+/g, " ").trim().slice(0, MAX_MUSIC_PROMPT);
+  } else if (prompt.length > MAX_MUSIC_PROMPT) {
     prompt = prompt.slice(0, MAX_MUSIC_PROMPT);
   }
 
   if (prompt.length < MIN_MUSIC_PROMPT) {
-    prompt = PROMPT_FALLBACK_MIN.slice(0, MAX_MUSIC_PROMPT);
+    prompt = ensureCharRange(
+      prompt || PROMPT_FALLBACK_MIN,
+      MIN_MUSIC_PROMPT,
+      MAX_MUSIC_PROMPT,
+      PROMPT_FALLBACK_MIN
+    );
   }
 
   return prompt.slice(0, MAX_MUSIC_PROMPT);
 }
 
-function buildMinimaxLyrics(row: ProjectRow, kind: "beat" | "full_song"): string {
-  if (kind === "beat") {
-    const beatLyrics = `[instrumental]
-No vocals. Pure instrumental beat, loop-friendly arrangement.
-[verse] (instrumental groove — drums, bass, harmony)
-[chorus] (instrumental hook — memorable motif, no singing)
-[outro] (instrumental fade)`;
-    return ensureCharRange(beatLyrics, MIN_LYRICS, MAX_LYRICS, "[instrumental] ");
-  }
+/**
+ * Beat: `lyrics` must stay free of section tags so the model does not treat lines as sung lyrics.
+ */
+function buildBeatLyricsField(): string {
+  const plain =
+    "Pure instrumental arrangement. No vocals, no singing, no lyrics. Drums, bass, and harmony only; beat and groove only.";
+  return ensureCharRange(plain, MIN_LYRICS, MAX_LYRICS, "Instrumental. No vocals. ");
+}
 
+/**
+ * Full song: `prompt` = style only (10–300), no user lyric body here.
+ */
+function buildFullSongStylePrompt(row: ProjectRow): string {
+  const { direction: directionRaw } = unpackStudioPromptMeta(row.prompt);
+  const trackDescription = stripLyricSectionTags(directionRaw.trim());
+  const genre = row.genre?.trim() ?? "";
+  const mood = row.mood?.trim() ?? "";
+  const keyStr = row.key?.trim() ?? "";
+  const bpm = bpmClamped(row);
+  const inst = instrumentsPhrase(row.instruments);
+  const vocalStyle = row.vocal_style?.trim() ?? "";
+
+  const parts: string[] = [];
+  if (trackDescription) parts.push(trackDescription);
+  if (genre) parts.push(genre);
+  if (mood) parts.push(`${mood} mood`);
+  if (vocalStyle) parts.push(`vocal style ${vocalStyle}`);
+  if (inst) parts.push(inst);
+  if (bpm != null) parts.push(`${bpm} BPM`);
+  if (keyStr) parts.push(keyStr);
+
+  let prompt = parts.join(", ").replace(/\s+/g, " ").trim();
+  if (prompt.length > MAX_MUSIC_PROMPT) {
+    prompt = prompt.slice(0, MAX_MUSIC_PROMPT);
+  }
+  if (prompt.length < MIN_MUSIC_PROMPT) {
+    prompt = ensureCharRange(
+      prompt || "full song, lead vocals, mix-ready production",
+      MIN_MUSIC_PROMPT,
+      MAX_MUSIC_PROMPT,
+      "full song, vocals, "
+    );
+  }
+  return prompt.slice(0, MAX_MUSIC_PROMPT);
+}
+
+/** If user lyrics have no section tags, wrap as a single [verse] so MiniMax treats the rest as structure correctly. */
+function ensureLyricsSectionTags(lyrics: string): string {
+  const t = lyrics.trim();
+  if (!t) return t;
+  if (/\[[^\]]+\]/i.test(t)) return t;
+  return `[verse]\n${t}`;
+}
+
+/**
+ * Full song: `lyrics` = tagged sections for sung parts. If no lyrics, instrumental instructions only (no fake song).
+ */
+function buildFullSongLyricsField(row: ProjectRow): string {
   const existing = row.lyrics?.trim() ?? "";
   if (existing.length >= MIN_LYRICS) {
-    const withStructure = `Full song: use clear [verse] and [chorus] section markers. Follow the lyrics and implied melody closely.\n${existing}`;
-    return ensureCharRange(withStructure, MIN_LYRICS, MAX_LYRICS, "[verse] ");
+    const tagged = ensureLyricsSectionTags(existing);
+    return ensureCharRange(tagged, MIN_LYRICS, MAX_LYRICS, "[verse]\n");
   }
 
-  const fallback = `[intro]
-Lights up, we own the sky tonight.
-[verse]
-Every bar a spark, every note upright.
-[chorus]
-This is our anthem, burning bright.
-[bridge]
-Hold your breath and jump with me.
-[outro]
-Sing it loud until dawn.`;
-  return ensureCharRange(fallback, MIN_LYRICS, MAX_LYRICS, "[verse] La la la.");
+  const instrumentalOnly =
+    "Instrumental full track only. No vocals, no singing, no lyrics. Follow the style prompt; arrangement without any voice.";
+  return ensureCharRange(instrumentalOnly, MIN_LYRICS, MAX_LYRICS, "Instrumental only. No vocals. ");
+}
+
+function buildMinimaxInputs(row: ProjectRow, kind: "beat" | "full_song"): {
+  prompt: string;
+  lyrics: string;
+} {
+  if (kind === "beat") {
+    return { prompt: buildBeatStylePrompt(row), lyrics: buildBeatLyricsField() };
+  }
+  return {
+    prompt: buildFullSongStylePrompt(row),
+    lyrics: buildFullSongLyricsField(row),
+  };
 }
 
 /** Turn Replicate HTTP error body into a short message for logs + client. */
@@ -257,8 +351,7 @@ export async function POST(request: Request) {
   }
 
   const row = project as unknown as ProjectRow;
-  const musicPrompt = buildDescriptiveMinimaxPrompt(row, kind);
-  const lyrics = buildMinimaxLyrics(row, kind);
+  const { prompt: musicPrompt, lyrics } = buildMinimaxInputs(row, kind);
 
   const nowIso = new Date().toISOString();
   const hasJob = !!jobId && !!jobType;
@@ -318,18 +411,13 @@ export async function POST(request: Request) {
   let predictionId = "";
 
   try {
-    console.log(
-      "[generate/music] Final MiniMax music prompt (Replicate)",
-      `length=${musicPrompt.length}`,
-      "content=",
-      musicPrompt
-    );
-    console.log(
-      "[generate/music] MiniMax lyrics:",
-      `length=${lyrics.length}`,
-      "preview=",
-      lyrics.slice(0, 160).replace(/\s+/g, " ")
-    );
+    console.log("[generate/music] Final MiniMax inputs for Replicate (before POST)", {
+      kind,
+      promptLength: musicPrompt.length,
+      prompt: musicPrompt,
+      lyricsLength: lyrics.length,
+      lyrics,
+    });
 
     const createRes = await fetch(REPLICATE_MINIMAX_MUSIC_PREDICTIONS, {
       method: "POST",
