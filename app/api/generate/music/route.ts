@@ -2,9 +2,11 @@ import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
-/** Beat: ACE-Step (text + duration). Full song: MiniMax Music 2.5 (prompt + lyrics). */
+/** Beat: ACE-Step (`tags` + `lyrics` + `duration`). Full song: MiniMax Music 2.5 (prompt + lyrics). */
 const REPLICATE_ACE_STEP_PREDICTIONS =
   "https://api.replicate.com/v1/models/lucataco/ace-step/predictions";
+/** ACE-Step instrumental beats: required `lyrics` value (no `prompt` field — use `tags` only for style). */
+const ACE_BEAT_LYRICS_INSTRUMENTAL = "[instrumental]";
 const REPLICATE_MINIMAX_MUSIC_25_PREDICTIONS =
   "https://api.replicate.com/v1/models/minimax/music-2.5/predictions";
 const POLL_INTERVAL_MS = 2000;
@@ -372,7 +374,11 @@ export async function POST(request: Request) {
 
   const replicateInput: Record<string, string | number> =
     kind === "beat"
-      ? { tags: aceBeatTags, duration: aceDuration }
+      ? {
+          tags: aceBeatTags,
+          lyrics: ACE_BEAT_LYRICS_INSTRUMENTAL,
+          duration: aceDuration,
+        }
       : {
           prompt: fullSongPrompt,
           lyrics: fullSongLyrics,
