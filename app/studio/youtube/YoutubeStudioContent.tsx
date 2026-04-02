@@ -190,6 +190,13 @@ export default function YoutubeStudioContent() {
             onGenerate={runThumbnail}
           />
           <StudioGenerationCard
+            icon="🎬"
+            title="Generate Music Video"
+            description="Visualizer or short-form video"
+            credits={JOB_CREDIT_COST.video}
+            comingSoon
+          />
+          <StudioGenerationCard
             icon="📦"
             title="Generate YouTube Package"
             description="Title, description, tags, thumbnail bundle"
@@ -200,13 +207,6 @@ export default function YoutubeStudioContent() {
               !canAfford(JOB_CREDIT_COST.youtube_package)
             }
             onGenerate={runYouTubePackage}
-          />
-          <StudioGenerationCard
-            icon="🎬"
-            title="Generate Music Video"
-            description="Visualizer or short-form video"
-            credits={JOB_CREDIT_COST.video}
-            comingSoon
           />
         </div>
       </section>

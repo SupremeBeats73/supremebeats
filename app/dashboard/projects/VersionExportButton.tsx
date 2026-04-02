@@ -2,7 +2,21 @@
 
 import { useState } from "react";
 
-export default function VersionExportButton({ versionId }: { versionId: string }) {
+function sanitizeFileBase(name: string): string {
+  const s = name.replace(/[^\w\s\-]/g, "").trim().replace(/\s+/g, "_");
+  return s.slice(0, 100) || "SupremeBeats_version";
+}
+
+type VersionExportButtonProps = {
+  versionId: string;
+  /** Base filename without extension (e.g. project + version label). */
+  fileBaseName?: string;
+};
+
+export default function VersionExportButton({
+  versionId,
+  fileBaseName,
+}: VersionExportButtonProps) {
   const [loading, setLoading] = useState(false);
 
   const handleClick = async () => {
@@ -20,12 +34,27 @@ export default function VersionExportButton({ versionId }: { versionId: string }
         return;
       }
       const url = data.url as string;
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+      const base = sanitizeFileBase(fileBaseName ?? "SupremeBeats_version");
+      try {
+        const audioRes = await fetch(url);
+        if (!audioRes.ok) throw new Error("bad response");
+        const blob = await audioRes.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = objectUrl;
+        a.download = `${base}.mp3`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(objectUrl);
+      } catch {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${base}.mp3`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
     } finally {
       setLoading(false);
     }
@@ -36,9 +65,9 @@ export default function VersionExportButton({ versionId }: { versionId: string }
       type="button"
       onClick={handleClick}
       disabled={loading}
-      className="rounded-lg border border-[var(--purple-mid)] bg-black/40 px-2.5 py-1 text-xs font-medium text-[var(--muted)] transition-colors hover:border-[var(--neon-green)] hover:text-[var(--neon-green)] disabled:opacity-60"
+      className="rounded-lg border-2 border-[var(--neon-green)] bg-transparent px-2.5 py-1 text-xs font-semibold text-[var(--neon-green)] shadow-[0_0_10px_rgba(34,197,94,0.25)] transition hover:bg-[var(--neon-green)]/10 disabled:opacity-60"
     >
-      {loading ? "Exporting…" : "Export"}
+      {loading ? "Downloading…" : "Download"}
     </button>
   );
 }

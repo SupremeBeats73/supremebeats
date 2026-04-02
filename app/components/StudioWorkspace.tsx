@@ -32,6 +32,14 @@ type StudioWorkspaceProps = {
   hideGenerationActionButtons?: boolean;
   /** Hide right-hand BPM/Key/Genre/Chords sidebar (e.g. Music Studio form owns those fields). */
   hideGenerationSidebar?: boolean;
+  /** Music Studio: hide transport + timeline until a beat/full song exists or parent sets ready. */
+  deferTimelineUntilMixReady?: boolean;
+  /** Parent: true when project has a generated mix (versions, saved asset, or fresh session). */
+  timelineMixReady?: boolean;
+  /** Load latest saved mix when timeline becomes ready (signed URL from project_assets). */
+  initialMainMixUrl?: string | null;
+  /** Base filename (without extension) for the main Download button. */
+  downloadBaseName?: string;
 };
 
 export type StudioWorkspaceHandle = {
@@ -60,6 +68,10 @@ const StudioWorkspace = forwardRef<StudioWorkspaceHandle, StudioWorkspaceProps>(
       onPersistBeforeGenerate,
       hideGenerationActionButtons = false,
       hideGenerationSidebar = false,
+      deferTimelineUntilMixReady = false,
+      timelineMixReady = false,
+      initialMainMixUrl = null,
+      downloadBaseName,
     },
     ref
   ) {
@@ -77,6 +89,7 @@ const StudioWorkspace = forwardRef<StudioWorkspaceHandle, StudioWorkspaceProps>(
   const [genre, setGenre] = useState("Trap");
   const [chords, setChords] = useState("C G Am F");
   const [error, setError] = useState<string | null>(null);
+  const [playbackDownloadUrl, setPlaybackDownloadUrl] = useState<string | null>(null);
   const { user } = useAuth();
   const { addAsset, updateAssetStatus } = useProjects();
   const { submitJob, completeJob, failJob, creditsRemaining, creditsLoading } = useJobs();
@@ -183,6 +196,7 @@ const StudioWorkspace = forwardRef<StudioWorkspaceHandle, StudioWorkspaceProps>(
       setError("Invalid audio URL. Please regenerate and try again.");
       return;
     }
+    setPlaybackDownloadUrl(trimmed);
 
     if (wavesurferRefs.current.length === 0) {
       // Initialize exactly once using the first known URL.
@@ -198,8 +212,48 @@ const StudioWorkspace = forwardRef<StudioWorkspaceHandle, StudioWorkspaceProps>(
     wavesurferRefs.current.forEach((ws) => ws.load(trimmed));
   }
 
+  function sanitizeDownloadBase(name: string): string {
+    const s = name.replace(/[^\w\s\-]/g, "").trim().replace(/\s+/g, "_");
+    return s.slice(0, 80) || "SupremeBeats_track";
+  }
+
+  async function handleDownloadPlayback() {
+    const url = playbackDownloadUrl;
+    if (!url || !isValidSignedUrl(url)) return;
+    const base = sanitizeDownloadBase(downloadBaseName?.trim() || "track");
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("bad response");
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = `${base}.mp3`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch {
+      setError("Could not download audio. Try again.");
+    }
+  }
+
+  const showTimelineChrome =
+    !deferTimelineUntilMixReady || timelineMixReady;
+
+  const lastInitialMixRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!deferTimelineUntilMixReady || !timelineMixReady) return;
+    if (!initialMainMixUrl || !isValidSignedUrl(initialMainMixUrl)) return;
+    if (lastInitialMixRef.current === initialMainMixUrl) return;
+    lastInitialMixRef.current = initialMainMixUrl;
+    void loadAudioUrl(initialMainMixUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: only re-hydrate when gate or signed URL changes
+  }, [deferTimelineUntilMixReady, timelineMixReady, initialMainMixUrl]);
+
   // Initialize WaveSurfer when we first receive at least one real URL.
   useEffect(() => {
+    if (deferTimelineUntilMixReady && !timelineMixReady) return;
     if (wavesurferRefs.current.length > 0) return;
     if (!containerRef.current) return;
     if (!tracks?.length) return;
@@ -207,7 +261,7 @@ const StudioWorkspace = forwardRef<StudioWorkspaceHandle, StudioWorkspaceProps>(
     if (!valid) return;
     void ensureWaveSurferInitialized(tracks);
     // Re-run only if the set of URLs changes; never destroy on these changes.
-  }, [trackUrlsKey, tracks]);
+  }, [deferTimelineUntilMixReady, timelineMixReady, trackUrlsKey, tracks]);
 
   const handlePlay = () => {
     if (isWaveLoading || !waveReady) return;
@@ -479,58 +533,86 @@ const StudioWorkspace = forwardRef<StudioWorkspaceHandle, StudioWorkspaceProps>(
       )}
       {/* Left: multi-track timeline + global transport */}
       <div className="flex flex-col gap-4">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-[0_0_30px_rgba(110,44,242,0.35)]">
-          <div className="mb-3 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/60">
-                Global Transport
-              </p>
-              <p className="text-sm text-white/70">Control every lane from one place.</p>
+        {showTimelineChrome ? (
+          <>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-[0_0_30px_rgba(110,44,242,0.35)]">
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/60">
+                    Global Transport
+                  </p>
+                  <p className="text-sm text-white/70">Control every lane from one place.</p>
+                </div>
+                <div className="inline-flex items-center gap-2 rounded-full bg-black/40 px-3 py-1 text-xs text-white/60">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#6E2CF2]" />
+                  <span>
+                    {transportState === "playing"
+                      ? "Playing"
+                      : transportState === "paused"
+                        ? "Paused"
+                        : "Stopped"}
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <button
+                  type="button"
+                  onClick={handlePlay}
+                  disabled={isWaveLoading || !waveReady}
+                  aria-disabled={isWaveLoading || !waveReady}
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#6E2CF2] text-sm font-semibold text-white shadow-[0_0_18px_rgba(110,44,242,0.8)] transition hover:bg-[#8242ff]"
+                >
+                  ▶
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePause}
+                  disabled={isWaveLoading || !waveReady}
+                  aria-disabled={isWaveLoading || !waveReady}
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-black/40 text-xs text-white/80 transition hover:bg-white/10"
+                >
+                  ‖
+                </button>
+                <button
+                  type="button"
+                  onClick={handleStop}
+                  disabled={!waveReady}
+                  className="flex h-11 min-w-[44px] items-center justify-center rounded-full border border-white/20 bg-black/40 px-3 text-xs font-medium text-white/80 transition hover:bg-white/10"
+                >
+                  Stop
+                </button>
+                {hideGenerationSidebar &&
+                  downloadBaseName &&
+                  playbackDownloadUrl &&
+                  waveReady && (
+                    <button
+                      type="button"
+                      onClick={() => void handleDownloadPlayback()}
+                      className="ml-auto min-h-[44px] rounded-full border-2 border-[var(--neon-green)] bg-transparent px-4 text-sm font-semibold text-[var(--neon-green)] shadow-[0_0_14px_rgba(34,197,94,0.35)] transition hover:bg-[var(--neon-green)]/10"
+                    >
+                      Download
+                    </button>
+                  )}
+              </div>
             </div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-black/40 px-3 py-1 text-xs text-white/60">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#6E2CF2]" />
-              <span>{transportState === "playing" ? "Playing" : transportState === "paused" ? "Paused" : "Stopped"}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              type="button"
-              onClick={handlePlay}
-              disabled={isWaveLoading || !waveReady}
-              aria-disabled={isWaveLoading || !waveReady}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#6E2CF2] text-sm font-semibold text-white shadow-[0_0_18px_rgba(110,44,242,0.8)] transition hover:bg-[#8242ff]"
-            >
-              ▶
-            </button>
-            <button
-              type="button"
-              onClick={handlePause}
-              disabled={isWaveLoading || !waveReady}
-              aria-disabled={isWaveLoading || !waveReady}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-black/40 text-xs text-white/80 transition hover:bg-white/10"
-            >
-              ‖
-            </button>
-            <button
-              type="button"
-              onClick={handleStop}
-              disabled={!waveReady}
-              className="flex h-11 min-w-[44px] items-center justify-center rounded-full border border-white/20 bg-black/40 px-3 text-xs font-medium text-white/80 transition hover:bg-white/10"
-            >
-              Stop
-            </button>
-          </div>
-        </div>
 
-        <div className="rounded-2xl border border-white/8 bg-black/40 p-4">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-white/60">
-            Timeline
-          </p>
-          <div
-            ref={containerRef}
-            className="flex flex-col rounded-xl bg-gradient-to-br from-[#111111] via-[#141018] to-[#1A1A1A] p-3"
-          />
-        </div>
+            <div className="rounded-2xl border border-white/8 bg-black/40 p-4">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-white/60">
+                Timeline
+              </p>
+              <div
+                ref={containerRef}
+                className="flex flex-col rounded-xl bg-gradient-to-br from-[#111111] via-[#141018] to-[#1A1A1A] p-3"
+              />
+            </div>
+          </>
+        ) : (
+          <div className="rounded-2xl border border-white/10 bg-black/30 p-8 text-center shadow-[0_0_24px_rgba(110,44,242,0.12)]">
+            <p className="text-sm text-white/70">
+              Generate a beat or full song to see your waveform here.
+            </p>
+          </div>
+        )}
 
         {hideGenerationSidebar && (
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">

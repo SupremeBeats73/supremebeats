@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useProjects } from "../../context/ProjectsContext";
 import StudioWorkspace, {
@@ -14,7 +14,6 @@ import { JOB_CREDIT_COST } from "../../lib/jobConfig";
 import VersionExportButton from "../../dashboard/projects/VersionExportButton";
 import { supabase } from "../../lib/supabaseClient";
 import type { ProjectUpdatePatch } from "../../lib/supabaseProjects";
-import type { ProjectAssetKind } from "../../lib/types";
 
 const STUDIO_PROMPT_META_PREFIX = "SBMETA_JSON";
 
@@ -119,6 +118,11 @@ type VersionRow = {
   created_at: string;
 };
 
+function sanitizeProjectFileBase(name: string): string {
+  const s = name.replace(/[^\w\s\-]/g, "").trim().replace(/\s+/g, "_");
+  return s.slice(0, 80) || "SupremeBeats_track";
+}
+
 export default function MusicStudioContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -128,10 +132,10 @@ export default function MusicStudioContent() {
     projects,
     projectsLoading,
     getProject,
+    getAssets,
     updateProject,
     refreshProjects,
     createProject,
-    mockGenerate,
   } = useProjects();
 
   const project = projectId ? getProject(projectId) : undefined;
@@ -161,11 +165,48 @@ export default function MusicStudioContent() {
   const [versionsLoading, setVersionsLoading] = useState(false);
   const workspaceRef = useRef<StudioWorkspaceHandle>(null);
   const [pendingMusicAction, setPendingMusicAction] = useState<
-    null | "beat" | "full_song" | "stems" | "cover_art" | "thumbnail" | "video" | "youtube_package"
+    null | "beat" | "full_song" | "stems"
   >(null);
+  const [sessionMixReady, setSessionMixReady] = useState(false);
   const [referenceUploading, setReferenceUploading] = useState(false);
   const createReferenceInputRef = useRef<HTMLInputElement>(null);
   const [autoGenerateKind, setAutoGenerateKind] = useState<null | "beat" | "full_song">(null);
+
+  const projectAssets = useMemo(
+    () => (projectId ? getAssets(projectId) : []),
+    [projectId, getAssets]
+  );
+
+  const hasPersistedBeatOrSong = projectAssets.some(
+    (a) =>
+      (a.kind === "beat" || a.kind === "full_song") &&
+      a.status === "success" &&
+      Boolean(a.url)
+  );
+
+  const latestMainMixUrl = useMemo(() => {
+    for (const a of projectAssets) {
+      if (
+        (a.kind === "beat" || a.kind === "full_song") &&
+        a.status === "success" &&
+        a.url
+      ) {
+        return a.url;
+      }
+    }
+    return null;
+  }, [projectAssets]);
+
+  useEffect(() => {
+    setSessionMixReady(false);
+  }, [projectId]);
+
+  useEffect(() => {
+    if (hasPersistedBeatOrSong || versions.length > 0) setSessionMixReady(true);
+  }, [hasPersistedBeatOrSong, versions.length]);
+
+  const timelineMixReady =
+    hasPersistedBeatOrSong || versions.length > 0 || sessionMixReady;
 
   const genreValue =
     genrePreset === "Custom" ? (customGenre.trim() || "Custom") : genrePreset;
@@ -352,6 +393,7 @@ export default function MusicStudioContent() {
       setVersions([]);
       return;
     }
+    setVersions([]);
     let cancelled = false;
     setVersionsLoading(true);
     void (async () => {
@@ -463,22 +505,15 @@ export default function MusicStudioContent() {
     }
   };
 
-  const handleExtraGenerate = async (
-    kind: Extract<ProjectAssetKind, "stems" | "vocals" | "cover_art" | "thumbnail" | "video" | "youtube_package">
-  ) => {
+  const handleExtraGenerateStems = async () => {
     if (!canGenerateFromForm) {
       setCreateError("Fill in your track details above to generate.");
       return;
     }
-    if (kind === "vocals") return;
-    setPendingMusicAction(kind);
+    setPendingMusicAction("stems");
     try {
-      const id = await createOrUpdateProjectFromForm();
-      if (kind === "stems") {
-        await workspaceRef.current?.splitStems();
-      } else {
-        await mockGenerate(id, kind, kind.replace(/_/g, " "));
-      }
+      await createOrUpdateProjectFromForm();
+      await workspaceRef.current?.splitStems();
     } catch (e) {
       setCreateError(e instanceof Error ? e.message : "Generation failed.");
     } finally {
@@ -888,77 +923,6 @@ This is the hook — big, memorable, repeat it twice.`;
           </div>
         </div>
 
-        <section className="mb-10 rounded-2xl border border-[#6E2CF2]/25 bg-[#0a0810] p-5 shadow-[0_0_32px_rgba(110,44,242,0.15)] sm:p-6">
-          <div className="mb-4 grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => setMusicTab("beat")}
-              className={`rounded-2xl border-2 px-4 py-4 text-center text-base font-bold transition-all duration-300 sm:text-lg ${
-                musicTab === "beat"
-                  ? "border-[#6E2CF2] bg-[#6E2CF2]/20 text-white shadow-[0_0_28px_rgba(110,44,242,0.55)]"
-                  : "border-white/10 bg-black/50 text-[var(--muted)] hover:border-white/20"
-              }`}
-            >
-              Beat
-            </button>
-            <button
-              type="button"
-              onClick={() => setMusicTab("full_song")}
-              className={`rounded-2xl border-2 px-4 py-4 text-center text-base font-bold transition-all duration-300 sm:text-lg ${
-                musicTab === "full_song"
-                  ? "border-[#6E2CF2] bg-[#6E2CF2]/20 text-white shadow-[0_0_28px_rgba(110,44,242,0.55)]"
-                  : "border-white/10 bg-black/50 text-[var(--muted)] hover:border-white/20"
-              }`}
-            >
-              Full Song
-            </button>
-          </div>
-          <div className="space-y-3">
-            <button
-              type="button"
-              title={canGenerateFromForm ? "" : "Fill in your track details above to generate"}
-              disabled={!canGenerateFromForm || !!pendingMusicAction}
-              onClick={() => void handlePrimaryGenerate(musicTab)}
-              className="group relative w-full overflow-hidden rounded-2xl border-2 border-[#6E2CF2] bg-gradient-to-br from-[#6E2CF2]/30 to-black py-5 text-lg font-bold text-white transition hover:shadow-[0_0_40px_rgba(110,44,242,0.65)] disabled:opacity-50"
-            >
-              <span className="relative z-10 flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-4">
-                <span>{musicTab === "beat" ? "Generate Beat" : "Generate Full Song"}</span>
-                <span className="rounded-full bg-black/50 px-3 py-1 text-sm font-bold text-[var(--neon-green)] shadow-[0_0_12px_rgba(34,197,94,0.5)]">
-                  {musicTab === "beat" ? JOB_CREDIT_COST.beat : JOB_CREDIT_COST.full_song} credits
-                </span>
-              </span>
-            </button>
-            {!canGenerateFromForm && (
-              <p className="text-center text-xs text-[var(--muted)]">
-                Fill in your track details above to generate
-              </p>
-            )}
-          </div>
-        </section>
-
-        <section className="mb-10">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
-            More generation
-          </h2>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <StudioGenerationCard icon="🎛️" title="Generate Stems" description="Separated stems from your track" credits={JOB_CREDIT_COST.stems} disabled={!canGenerateFromForm || !!pendingMusicAction} busy={pendingMusicAction === "stems"} onGenerate={() => void handleExtraGenerate("stems")} />
-            <StudioGenerationCard icon="🎙️" title="Generate Optional Vocals" description="Add vocal stems or top-line" credits={JOB_CREDIT_COST.vocals} comingSoon />
-            <StudioGenerationCard icon="🖼️" title="Generate Cover Art" description="Create cinematic cover artwork" credits={JOB_CREDIT_COST.cover_art} disabled={!canGenerateFromForm || !!pendingMusicAction} busy={pendingMusicAction === "cover_art"} onGenerate={() => void handleExtraGenerate("cover_art")} />
-            <StudioGenerationCard icon="🧲" title="Generate Thumbnail" description="Create social-ready thumbnails" credits={JOB_CREDIT_COST.thumbnail} disabled={!canGenerateFromForm || !!pendingMusicAction} busy={pendingMusicAction === "thumbnail"} onGenerate={() => void handleExtraGenerate("thumbnail")} />
-            <StudioGenerationCard icon="🎬" title="Generate Music Video" description="Generate a visual music video concept" credits={JOB_CREDIT_COST.video} disabled={!canGenerateFromForm || !!pendingMusicAction} busy={pendingMusicAction === "video"} onGenerate={() => void handleExtraGenerate("video")} />
-            <StudioGenerationCard icon="📦" title="Generate YouTube Package" description="Bundle title, thumbnail, and metadata" credits={JOB_CREDIT_COST.youtube_package} disabled={!canGenerateFromForm || !!pendingMusicAction} busy={pendingMusicAction === "youtube_package"} onGenerate={() => void handleExtraGenerate("youtube_package")} />
-          </div>
-        </section>
-
-        <section className="mb-10 rounded-2xl border border-white/10 bg-[#08060c]/90 p-4 sm:p-6">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
-            Timeline &amp; versions
-          </h2>
-          <p className="text-sm text-[var(--muted)]">
-            Generate your first beat or full song to see the waveform player and version history.
-          </p>
-        </section>
-
         <div className="mb-8 flex flex-wrap gap-3">
           <Link
             href="/dashboard/projects"
@@ -975,17 +939,25 @@ This is the hook — big, memorable, repeat it twice.`;
         </div>
         {projects.length > 0 && (
           <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-            <p className="mb-3 text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
+            <p className="mb-4 text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
               Recent projects
             </p>
-            <ul className="space-y-2">
+            <ul className="grid gap-3 sm:grid-cols-2">
               {projects.slice(0, 8).map((p) => (
                 <li key={p.id}>
                   <Link
                     href={`/studio/music?project=${p.id}`}
-                    className="block rounded-lg border border-white/5 bg-black/30 px-3 py-2.5 text-sm text-white transition hover:border-[var(--neon-green)]/30"
+                    className="block rounded-xl border border-white/10 bg-black/40 p-4 transition-all duration-300 hover:border-[#6E2CF2]/50 hover:shadow-[0_0_28px_rgba(110,44,242,0.45)]"
                   >
-                    {p.name} · {p.genre || "—"} · {p.bpm} BPM
+                    <p className="mb-2 text-base font-bold text-white">{p.name}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="rounded-full border border-[var(--neon-green)]/60 bg-[var(--neon-green)]/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--neon-green)]">
+                        {p.genre?.trim() || "Genre"}
+                      </span>
+                      <span className="rounded-full border border-[var(--neon-green)]/60 bg-[var(--neon-green)]/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--neon-green)]">
+                        {Number.isFinite(p.bpm) ? `${Math.round(p.bpm)} BPM` : "— BPM"}
+                      </span>
+                    </div>
                   </Link>
                 </li>
               ))}
@@ -1123,7 +1095,7 @@ This is the hook — big, memorable, repeat it twice.`;
             credits={JOB_CREDIT_COST.stems}
             busy={pendingMusicAction === "stems"}
             disabled={!!pendingMusicAction}
-            onGenerate={() => void handleExtraGenerate("stems")}
+            onGenerate={() => void handleExtraGenerateStems()}
           />
           <StudioGenerationCard
             icon="🎙️"
@@ -1131,42 +1103,6 @@ This is the hook — big, memorable, repeat it twice.`;
             description="Add vocal stems or top-line"
             credits={JOB_CREDIT_COST.vocals}
             comingSoon
-          />
-          <StudioGenerationCard
-            icon="🖼️"
-            title="Generate Cover Art"
-            description="Create cinematic cover artwork"
-            credits={JOB_CREDIT_COST.cover_art}
-            busy={pendingMusicAction === "cover_art"}
-            disabled={!!pendingMusicAction}
-            onGenerate={() => void handleExtraGenerate("cover_art")}
-          />
-          <StudioGenerationCard
-            icon="🧲"
-            title="Generate Thumbnail"
-            description="Create social-ready thumbnails"
-            credits={JOB_CREDIT_COST.thumbnail}
-            busy={pendingMusicAction === "thumbnail"}
-            disabled={!!pendingMusicAction}
-            onGenerate={() => void handleExtraGenerate("thumbnail")}
-          />
-          <StudioGenerationCard
-            icon="🎬"
-            title="Generate Music Video"
-            description="Generate a visual music video concept"
-            credits={JOB_CREDIT_COST.video}
-            busy={pendingMusicAction === "video"}
-            disabled={!!pendingMusicAction}
-            onGenerate={() => void handleExtraGenerate("video")}
-          />
-          <StudioGenerationCard
-            icon="📦"
-            title="Generate YouTube Package"
-            description="Bundle title, thumbnail, and metadata"
-            credits={JOB_CREDIT_COST.youtube_package}
-            busy={pendingMusicAction === "youtube_package"}
-            disabled={!!pendingMusicAction}
-            onGenerate={() => void handleExtraGenerate("youtube_package")}
           />
         </div>
       </section>
@@ -1177,6 +1113,7 @@ This is the hook — big, memorable, repeat it twice.`;
           Timeline &amp; versions
         </h2>
         <StudioWorkspace
+          key={projectId}
           ref={workspaceRef}
           projectId={projectId}
           initialBpm={bpm}
@@ -1185,8 +1122,12 @@ This is the hook — big, memorable, repeat it twice.`;
           onPersistBeforeGenerate={persistProject}
           hideGenerationActionButtons
           hideGenerationSidebar
+          deferTimelineUntilMixReady
+          timelineMixReady={timelineMixReady}
+          initialMainMixUrl={latestMainMixUrl}
+          downloadBaseName={project.name}
           tracks={
-            project.referenceUploads?.length
+            timelineMixReady && project.referenceUploads?.length
               ? project.referenceUploads.map((url, i) => ({
                   id: `ref-${i}`,
                   label: `Reference ${i + 1}`,
@@ -1195,6 +1136,7 @@ This is the hook — big, memorable, repeat it twice.`;
               : undefined
           }
           onGenerated={() => {
+            setSessionMixReady(true);
             void refreshProjects();
             void (async () => {
               if (!user?.id) return;
@@ -1232,7 +1174,10 @@ This is the hook — big, memorable, repeat it twice.`;
                       {new Date(v.created_at).toLocaleString()} · {v.status ?? "—"}
                     </p>
                   </div>
-                  <VersionExportButton versionId={v.id} />
+                  <VersionExportButton
+                    versionId={v.id}
+                    fileBaseName={`${sanitizeProjectFileBase(project.name)}_${sanitizeProjectFileBase(v.label ?? "version")}`}
+                  />
                 </li>
               ))}
             </ul>
