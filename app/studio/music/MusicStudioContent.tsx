@@ -569,412 +569,13 @@ Paint the picture, line by line…
 [chorus]
 This is the hook — big, memorable, repeat it twice.`;
 
-  if (!projectId) {
-    return (
-      <div className="mx-auto max-w-3xl px-4 py-10 sm:px-0">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--neon-green)]">
-          Music Studio
-        </p>
-        <h1 className="mb-2 text-2xl font-bold text-white">New project</h1>
-        <p className="mb-6 text-sm text-[var(--muted)]">
-          Set everything here once, then create — the workspace opens with your project ready to
-          generate.
-        </p>
-
-        <div className="mb-10 rounded-2xl border border-[#6E2CF2]/25 bg-[#0a0810] p-6 shadow-[0_0_32px_rgba(110,44,242,0.12)]">
-          <div className="space-y-8">
-            <div>
-              <label
-                htmlFor="music-studio-project-name"
-                className="mb-2 block text-xs font-medium uppercase tracking-wider text-[var(--muted)]"
-              >
-                Project name <span className="text-red-400">*</span>
-              </label>
-              <input
-                id="music-studio-project-name"
-                className={`${inputClass} py-3 text-base`}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="My track"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="music-studio-track-description"
-                className="mb-2 block text-xs font-medium uppercase tracking-wider text-[var(--muted)]"
-              >
-                Track description <span className="text-red-400">*</span>
-              </label>
-              <textarea
-                id="music-studio-track-description"
-                className={`${inputClass} min-h-[160px] text-base`}
-                value={trackDescription}
-                onChange={(e) => setTrackDescription(e.target.value)}
-                placeholder={NEW_PROJECT_DESC_PLACEHOLDER}
-              />
-              <p className="mt-2 text-xs text-[var(--muted)]">{TRACK_DESC_HELPER}</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setMusicTab("beat")}
-                className={`rounded-2xl border-2 px-4 py-4 text-center text-base font-bold transition-all duration-300 sm:text-lg ${
-                  musicTab === "beat"
-                    ? "border-[#6E2CF2] bg-[#6E2CF2]/20 text-white shadow-[0_0_28px_rgba(110,44,242,0.55)]"
-                    : "border-white/10 bg-black/50 text-[var(--muted)] hover:border-white/20"
-                }`}
-              >
-                Beat
-              </button>
-              <button
-                type="button"
-                onClick={() => setMusicTab("full_song")}
-                className={`rounded-2xl border-2 px-4 py-4 text-center text-base font-bold transition-all duration-300 sm:text-lg ${
-                  musicTab === "full_song"
-                    ? "border-[#6E2CF2] bg-[#6E2CF2]/20 text-white shadow-[0_0_28px_rgba(110,44,242,0.55)]"
-                    : "border-white/10 bg-black/50 text-[var(--muted)] hover:border-white/20"
-                }`}
-              >
-                Full Song
-              </button>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
-                Genre
-              </label>
-              <CustomSelect
-                value={genrePreset}
-                onChange={setGenrePreset}
-                options={genreOptions}
-                placeholder="Genre"
-                aria-label="Genre"
-                className="text-base [&_button]:min-h-[48px] [&_button]:py-3 [&_button]:text-base"
-              />
-              {genrePreset === "Custom" && (
-                <input
-                  className={`${inputClass} mt-3 py-3 text-base`}
-                  value={customGenre}
-                  onChange={(e) => setCustomGenre(e.target.value)}
-                  placeholder="Describe your genre"
-                />
-              )}
-            </div>
-
-            <div>
-              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
-                Mood
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {TIER1_MOODS.map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => setMood(mood === m ? "" : m)}
-                    className={`rounded-full border-2 px-4 py-2.5 text-sm font-semibold transition-all sm:px-5 sm:text-base ${
-                      mood === m
-                        ? "border-[var(--neon-green)] bg-[var(--neon-green)]/15 text-white shadow-[0_0_20px_rgba(34,197,94,0.45)]"
-                        : "border-white/15 bg-black/40 text-[var(--muted)] hover:border-white/25"
-                    }`}
-                  >
-                    {m}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="min-w-0 flex-1">
-                <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
-                  BPM
-                </label>
-                <input
-                  type="range"
-                  min={60}
-                  max={200}
-                  value={bpm}
-                  onChange={(e) => setBpm(Number(e.target.value))}
-                  className="h-3 w-full cursor-pointer accent-[#6E2CF2]"
-                />
-              </div>
-              <div className="flex shrink-0 items-baseline gap-1 sm:pl-4">
-                <span className="text-4xl font-bold tabular-nums text-white">{bpm}</span>
-                <span className="text-sm text-[var(--muted)]">BPM</span>
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
-                Musical key
-              </label>
-              <CustomSelect
-                value={keySelect}
-                onChange={setKeySelect}
-                options={KEY_SELECT_OPTIONS}
-                placeholder="Key"
-                aria-label="Musical key"
-                className="text-base [&_button]:min-h-[48px] [&_button]:py-3 [&_button]:text-base"
-              />
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setAdvancedOpen((o) => !o)}
-              className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-left text-sm text-[var(--muted)] transition hover:border-white/20 hover:text-white"
-            >
-              <span>Advanced Settings</span>
-              <svg
-                className={`h-4 w-4 shrink-0 transition-transform duration-300 ${
-                  advancedOpen ? "rotate-180" : ""
-                }`}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                aria-hidden
-              >
-                <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-
-            <div
-              className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
-                advancedOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-              }`}
-            >
-              <div className="min-h-0 overflow-hidden">
-                <div className="space-y-5 rounded-xl border border-white/10 bg-[#12101a] p-5">
-                  <div>
-                    <p className="mb-3 text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
-                      Instruments
-                    </p>
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                      {INSTRUMENT_OPTIONS.map((inst) => (
-                        <label
-                          key={inst}
-                          className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white hover:border-[#6E2CF2]/40"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={instruments.includes(inst)}
-                            onChange={() => toggleInstrument(inst)}
-                            className="h-4 w-4 rounded border-white/20 accent-[var(--neon-green)]"
-                          />
-                          {inst}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="mb-2 block text-xs font-medium text-[var(--muted)]">
-                        Song structure
-                      </label>
-                      <CustomSelect
-                        value={songStructure}
-                        onChange={setSongStructure}
-                        options={structureOptions}
-                        aria-label="Song structure"
-                        className="[&_button]:min-h-[44px]"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-2 block text-xs font-medium text-[var(--muted)]">
-                        Song length
-                      </label>
-                      <CustomSelect
-                        value={String(durationState)}
-                        onChange={(v) => setDurationState(Number(v))}
-                        options={lengthOptions}
-                        aria-label="Song length"
-                        className="[&_button]:min-h-[44px]"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-xs font-medium text-[var(--muted)]">
-                      Artist reference
-                    </label>
-                    <input
-                      className={inputClass}
-                      value={artistReference}
-                      onChange={(e) => setArtistReference(e.target.value)}
-                      placeholder="e.g. Drake, Kendrick, SZA"
-                    />
-                  </div>
-
-                  <div>
-                    <input
-                      ref={createReferenceInputRef}
-                      type="file"
-                      accept="audio/*"
-                      className="hidden"
-                      onChange={(e) => setPendingReferenceFile(e.target.files?.[0] ?? null)}
-                    />
-                    <button
-                      type="button"
-                      disabled={referenceUploading}
-                      onClick={() => createReferenceInputRef.current?.click()}
-                      className="rounded-xl border border-[#6E2CF2]/50 bg-[#6E2CF2]/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:shadow-[0_0_20px_rgba(110,44,242,0.4)] disabled:opacity-50"
-                    >
-                      Upload reference audio
-                    </button>
-                    {pendingReferenceFile && (
-                      <p className="mt-2 text-xs text-[var(--neon-green)]">
-                        Selected: {pendingReferenceFile.name}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {musicTab === "full_song" && (
-              <div className="mt-2">
-                <label
-                  className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 px-4 py-3 transition-all ${
-                    lyricsDetailsEnabled
-                      ? "border-[var(--neon-green)] bg-[var(--neon-green)]/10 shadow-[0_0_22px_rgba(34,197,94,0.35)]"
-                      : "border-white/10 bg-black/30 hover:border-white/20"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={lyricsDetailsEnabled}
-                    onChange={(e) => setLyricsDetailsEnabled(e.target.checked)}
-                    className="h-5 w-5 accent-[var(--neon-green)]"
-                  />
-                  <span className="text-sm font-semibold text-white">
-                    Add Lyrics and Vocal Details
-                  </span>
-                </label>
-
-                <div
-                  className={`mt-3 grid transition-[grid-template-rows] duration-300 ease-in-out ${
-                    lyricsDetailsEnabled ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-                  }`}
-                >
-                  <div className="min-h-0 overflow-hidden">
-                    <div className="space-y-5 rounded-xl border border-[var(--neon-green)]/20 bg-[#0d120f] p-5">
-                      <div>
-                        <label className="mb-2 block text-xs font-medium text-[var(--muted)]">
-                          Lyrics
-                        </label>
-                        <textarea
-                          className={`${inputClass} min-h-[160px] text-base`}
-                          value={lyrics}
-                          onChange={(e) => setLyrics(e.target.value)}
-                          placeholder={lyricsPlaceholder}
-                        />
-                      </div>
-                      <div>
-                        <label className="mb-2 block text-xs font-medium text-[var(--muted)]">
-                          Vocal style
-                        </label>
-                        <CustomSelect
-                          value={vocalStyleSelect}
-                          onChange={setVocalStyleSelect}
-                          options={vocalOptions}
-                          aria-label="Vocal style"
-                          className="[&_button]:min-h-[48px] [&_button]:text-base"
-                        />
-                      </div>
-                      <div>
-                        <p className="mb-2 text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
-                          Mood / energy
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {LYRIC_ENERGY_PILLS.map((pill) => (
-                            <button
-                              key={pill}
-                              type="button"
-                              onClick={() => setLyricEnergy(pill)}
-                              className={`rounded-full border-2 px-4 py-2 text-sm font-semibold transition-all ${
-                                lyricEnergy === pill
-                                  ? "border-[var(--neon-green)] bg-[var(--neon-green)]/15 text-white shadow-[0_0_16px_rgba(34,197,94,0.4)]"
-                                  : "border-white/15 bg-black/40 text-[var(--muted)] hover:border-white/25"
-                              }`}
-                            >
-                              {pill}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {createError && <p className="text-sm text-red-400">{createError}</p>}
-
-            <button
-              type="button"
-              disabled={createSubmitting || referenceUploading}
-              onClick={() => void handleCreateProject()}
-              className="w-full rounded-xl bg-[var(--neon-green)] px-4 py-4 text-base font-bold text-black shadow-[0_0_24px_rgba(34,197,94,0.35)] transition hover:bg-[var(--neon-green-dim)] disabled:opacity-60"
-            >
-              {createSubmitting ? "Creating…" : "CREATE PROJECT"}
-            </button>
-          </div>
-        </div>
-
-        <div className="mb-8 flex flex-wrap gap-3">
-          <Link
-            href="/dashboard/projects"
-            className="rounded-xl border border-white/20 px-6 py-3 text-sm font-semibold text-white hover:bg-white/5"
-          >
-            All projects
-          </Link>
-          <Link
-            href="/studio"
-            className="rounded-xl border border-[var(--purple-glow)]/40 px-6 py-3 text-sm text-[var(--purple-glow)] hover:bg-white/5"
-          >
-            ← Studio hub
-          </Link>
-        </div>
-        {projects.length > 0 && (
-          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-            <p className="mb-4 text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
-              Recent projects
-            </p>
-            <ul className="grid gap-3 sm:grid-cols-2">
-              {projects.slice(0, 8).map((p) => (
-                <li key={p.id}>
-                  <Link
-                    href={`/studio/music?project=${p.id}`}
-                    className="block rounded-xl border border-white/10 bg-black/40 p-4 transition-all duration-300 hover:border-[#6E2CF2]/50 hover:shadow-[0_0_28px_rgba(110,44,242,0.45)]"
-                  >
-                    <p className="mb-2 text-base font-bold text-white">{p.name}</p>
-                    <div className="flex flex-wrap gap-2">
-                      <span className="rounded-full border border-[var(--neon-green)]/60 bg-[var(--neon-green)]/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--neon-green)]">
-                        {p.genre?.trim() || "Genre"}
-                      </span>
-                      <span className="rounded-full border border-[var(--neon-green)]/60 bg-[var(--neon-green)]/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--neon-green)]">
-                        {Number.isFinite(p.bpm) ? `${Math.round(p.bpm)} BPM` : "— BPM"}
-                      </span>
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  if (projectsLoading && !project) {
+  if (projectId && projectsLoading && !project) {
     return (
       <div className="px-4 py-10 text-sm text-[var(--muted)]">Loading project…</div>
     );
   }
 
-  if (!project) {
+  if (projectId && !projectsLoading && !project) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-10">
         <h1 className="mb-2 text-xl font-bold text-white">Project not found</h1>
@@ -993,64 +594,401 @@ This is the hook — big, memorable, repeat it twice.`;
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6">
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <Link
-            href="/studio"
-            className="mb-2 inline-block text-xs text-[var(--muted)] hover:text-[var(--neon-green)]"
-          >
-            ← Studio hub
-          </Link>
-          <h1 className="text-2xl font-bold text-white sm:text-3xl">{project.name}</h1>
-          <p className="mt-1 text-sm text-[var(--muted)]">Music Studio · generation &amp; export</p>
+      {!projectId ? (
+        <>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--neon-green)]">
+            Music Studio
+          </p>
+          <h1 className="mb-2 text-2xl font-bold text-white">New project</h1>
+          <p className="mb-6 max-w-2xl text-sm text-[var(--muted)]">
+            Set your track details below, then generate a beat or full song on this page. Create project
+            saves without using credits; Generate creates the project if needed and starts your render.
+          </p>
+        </>
+      ) : (
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <Link
+              href="/studio"
+              className="mb-2 inline-block text-xs text-[var(--muted)] hover:text-[var(--neon-green)]"
+            >
+              ← Studio hub
+            </Link>
+            <h1 className="text-2xl font-bold text-white sm:text-3xl">{project!.name}</h1>
+            <p className="mt-1 text-sm text-[var(--muted)]">Music Studio · generation &amp; export</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={`/dashboard/projects/${projectId}`}
+              className="rounded-xl border border-white/15 px-4 py-2 text-sm text-white hover:bg-white/5"
+            >
+              Project detail
+            </Link>
+            <Link
+              href="/studio/music"
+              className="rounded-xl bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/15"
+            >
+              New project
+            </Link>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href={`/dashboard/projects/${projectId}`}
-            className="rounded-xl border border-white/15 px-4 py-2 text-sm text-white hover:bg-white/5"
+      )}
+
+      <div className="mb-10 rounded-2xl border border-[#6E2CF2]/25 bg-[#0a0810] p-6 shadow-[0_0_32px_rgba(110,44,242,0.12)] sm:p-8">
+        <div className="space-y-8">
+          <div>
+            <label
+              htmlFor="music-studio-project-name"
+              className="mb-2 block text-xs font-medium uppercase tracking-wider text-[var(--muted)]"
+            >
+              Project name <span className="text-red-400">*</span>
+            </label>
+            <input
+              id="music-studio-project-name"
+              className={`${inputClass} py-3 text-base`}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="My track"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="music-studio-track-description"
+              className="mb-2 block text-xs font-medium uppercase tracking-wider text-[var(--muted)]"
+            >
+              Track description <span className="text-red-400">*</span>
+            </label>
+            <textarea
+              id="music-studio-track-description"
+              className={`${inputClass} min-h-[160px] text-base`}
+              value={trackDescription}
+              onChange={(e) => setTrackDescription(e.target.value)}
+              placeholder={NEW_PROJECT_DESC_PLACEHOLDER}
+            />
+            <p className="mt-2 text-xs text-[var(--muted)]">{TRACK_DESC_HELPER}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setMusicTab("beat")}
+              className={`rounded-2xl border-2 px-4 py-4 text-center text-base font-bold transition-all duration-300 sm:text-lg ${
+                musicTab === "beat"
+                  ? "border-[#6E2CF2] bg-[#6E2CF2]/20 text-white shadow-[0_0_28px_rgba(110,44,242,0.55)]"
+                  : "border-white/10 bg-black/50 text-[var(--muted)] hover:border-white/20"
+              }`}
+            >
+              Beat
+            </button>
+            <button
+              type="button"
+              onClick={() => setMusicTab("full_song")}
+              className={`rounded-2xl border-2 px-4 py-4 text-center text-base font-bold transition-all duration-300 sm:text-lg ${
+                musicTab === "full_song"
+                  ? "border-[#6E2CF2] bg-[#6E2CF2]/20 text-white shadow-[0_0_28px_rgba(110,44,242,0.55)]"
+                  : "border-white/10 bg-black/50 text-[var(--muted)] hover:border-white/20"
+              }`}
+            >
+              Full Song
+            </button>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
+              Genre
+            </label>
+            <CustomSelect
+              value={genrePreset}
+              onChange={setGenrePreset}
+              options={genreOptions}
+              placeholder="Genre"
+              aria-label="Genre"
+              className="text-base [&_button]:min-h-[48px] [&_button]:py-3 [&_button]:text-base"
+            />
+            {genrePreset === "Custom" && (
+              <input
+                className={`${inputClass} mt-3 py-3 text-base`}
+                value={customGenre}
+                onChange={(e) => setCustomGenre(e.target.value)}
+                placeholder="Describe your genre"
+              />
+            )}
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-[var(--muted)]">Mood</p>
+            <div className="flex flex-wrap gap-2">
+              {TIER1_MOODS.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMood(mood === m ? "" : m)}
+                  className={`rounded-full border-2 px-4 py-2.5 text-sm font-semibold transition-all sm:px-5 sm:text-base ${
+                    mood === m
+                      ? "border-[var(--neon-green)] bg-[var(--neon-green)]/15 text-white shadow-[0_0_20px_rgba(34,197,94,0.45)]"
+                      : "border-white/15 bg-black/40 text-[var(--muted)] hover:border-white/25"
+                  }`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="min-w-0 flex-1">
+              <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
+                BPM
+              </label>
+              <input
+                type="range"
+                min={60}
+                max={200}
+                value={bpm}
+                onChange={(e) => setBpm(Number(e.target.value))}
+                className="h-3 w-full cursor-pointer accent-[#6E2CF2]"
+              />
+            </div>
+            <div className="flex shrink-0 items-baseline gap-1 sm:pl-4">
+              <span className="text-4xl font-bold tabular-nums text-white">{bpm}</span>
+              <span className="text-sm text-[var(--muted)]">BPM</span>
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
+              Musical key
+            </label>
+            <CustomSelect
+              value={keySelect}
+              onChange={setKeySelect}
+              options={KEY_SELECT_OPTIONS}
+              placeholder="Key"
+              aria-label="Musical key"
+              className="text-base [&_button]:min-h-[48px] [&_button]:py-3 [&_button]:text-base"
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setAdvancedOpen((o) => !o)}
+            className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-left text-sm text-[var(--muted)] transition hover:border-white/20 hover:text-white"
           >
-            Project detail
-          </Link>
-          <Link
-            href="/studio/music"
-            className="rounded-xl bg-white/10 px-4 py-2 text-sm text-white hover:bg-white/15"
+            <span>Advanced Settings</span>
+            <svg
+              className={`h-4 w-4 shrink-0 transition-transform duration-300 ${
+                advancedOpen ? "rotate-180" : ""
+              }`}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden
+            >
+              <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+
+          <div
+            className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
+              advancedOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+            }`}
           >
-            New project
-          </Link>
+            <div className="min-h-0 overflow-hidden">
+              <div className="space-y-5 rounded-xl border border-white/10 bg-[#12101a] p-5">
+                <div>
+                  <p className="mb-3 text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
+                    Instruments
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {INSTRUMENT_OPTIONS.map((inst) => (
+                      <label
+                        key={inst}
+                        className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white hover:border-[#6E2CF2]/40"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={instruments.includes(inst)}
+                          onChange={() => toggleInstrument(inst)}
+                          className="h-4 w-4 rounded border-white/20 accent-[var(--neon-green)]"
+                        />
+                        {inst}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-xs font-medium text-[var(--muted)]">
+                      Song structure
+                    </label>
+                    <CustomSelect
+                      value={songStructure}
+                      onChange={setSongStructure}
+                      options={structureOptions}
+                      aria-label="Song structure"
+                      className="[&_button]:min-h-[44px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-xs font-medium text-[var(--muted)]">
+                      Song length
+                    </label>
+                    <CustomSelect
+                      value={String(durationState)}
+                      onChange={(v) => setDurationState(Number(v))}
+                      options={lengthOptions}
+                      aria-label="Song length"
+                      className="[&_button]:min-h-[44px]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-xs font-medium text-[var(--muted)]">
+                    Artist reference
+                  </label>
+                  <input
+                    className={inputClass}
+                    value={artistReference}
+                    onChange={(e) => setArtistReference(e.target.value)}
+                    placeholder="e.g. Drake, Kendrick, SZA"
+                  />
+                </div>
+
+                <div>
+                  <input
+                    ref={createReferenceInputRef}
+                    type="file"
+                    accept="audio/*"
+                    className="hidden"
+                    onChange={(e) => setPendingReferenceFile(e.target.files?.[0] ?? null)}
+                  />
+                  <button
+                    type="button"
+                    disabled={referenceUploading}
+                    onClick={() => createReferenceInputRef.current?.click()}
+                    className="rounded-xl border border-[#6E2CF2]/50 bg-[#6E2CF2]/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:shadow-[0_0_20px_rgba(110,44,242,0.4)] disabled:opacity-50"
+                  >
+                    Upload reference audio
+                  </button>
+                  {pendingReferenceFile && (
+                    <p className="mt-2 text-xs text-[var(--neon-green)]">
+                      Selected: {pendingReferenceFile.name}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {musicTab === "full_song" && (
+            <div className="mt-2">
+              <label
+                className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 px-4 py-3 transition-all ${
+                  lyricsDetailsEnabled
+                    ? "border-[var(--neon-green)] bg-[var(--neon-green)]/10 shadow-[0_0_22px_rgba(34,197,94,0.35)]"
+                    : "border-white/10 bg-black/30 hover:border-white/20"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={lyricsDetailsEnabled}
+                  onChange={(e) => setLyricsDetailsEnabled(e.target.checked)}
+                  className="h-5 w-5 accent-[var(--neon-green)]"
+                />
+                <span className="text-sm font-semibold text-white">Add Lyrics and Vocal Details</span>
+              </label>
+
+              <div
+                className={`mt-3 grid transition-[grid-template-rows] duration-300 ease-in-out ${
+                  lyricsDetailsEnabled ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                }`}
+              >
+                <div className="min-h-0 overflow-hidden">
+                  <div className="space-y-5 rounded-xl border border-[var(--neon-green)]/20 bg-[#0d120f] p-5">
+                    <div>
+                      <label className="mb-2 block text-xs font-medium text-[var(--muted)]">Lyrics</label>
+                      <textarea
+                        className={`${inputClass} min-h-[160px] text-base`}
+                        value={lyrics}
+                        onChange={(e) => setLyrics(e.target.value)}
+                        placeholder={lyricsPlaceholder}
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-xs font-medium text-[var(--muted)]">
+                        Vocal style
+                      </label>
+                      <CustomSelect
+                        value={vocalStyleSelect}
+                        onChange={setVocalStyleSelect}
+                        options={vocalOptions}
+                        aria-label="Vocal style"
+                        className="[&_button]:min-h-[48px] [&_button]:text-base"
+                      />
+                    </div>
+                    <div>
+                      <p className="mb-2 text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
+                        Mood / energy
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {LYRIC_ENERGY_PILLS.map((pill) => (
+                          <button
+                            key={pill}
+                            type="button"
+                            onClick={() => setLyricEnergy(pill)}
+                            className={`rounded-full border-2 px-4 py-2 text-sm font-semibold transition-all ${
+                              lyricEnergy === pill
+                                ? "border-[var(--neon-green)] bg-[var(--neon-green)]/15 text-white shadow-[0_0_16px_rgba(34,197,94,0.4)]"
+                                : "border-white/15 bg-black/40 text-[var(--muted)] hover:border-white/25"
+                            }`}
+                          >
+                            {pill}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {createError && <p className="text-sm text-red-400">{createError}</p>}
+
+          {!projectId ? (
+            <button
+              type="button"
+              disabled={createSubmitting || referenceUploading}
+              onClick={() => void handleCreateProject()}
+              className="w-full rounded-xl bg-[var(--neon-green)] px-4 py-4 text-base font-bold text-black shadow-[0_0_24px_rgba(34,197,94,0.35)] transition hover:bg-[var(--neon-green-dim)] disabled:opacity-60"
+            >
+              {createSubmitting ? "Saving…" : "CREATE PROJECT"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled={createSubmitting || referenceUploading}
+              onClick={() => void handleCreateProject()}
+              className="w-full rounded-xl border-2 border-[var(--neon-green)] bg-transparent px-4 py-4 text-base font-bold text-[var(--neon-green)] shadow-[0_0_20px_rgba(34,197,94,0.25)] transition hover:bg-[var(--neon-green)]/10 disabled:opacity-60"
+            >
+              {createSubmitting ? "Saving…" : "SAVE PROJECT"}
+            </button>
+          )}
         </div>
       </div>
 
       <section className="mb-10 rounded-2xl border border-[#6E2CF2]/25 bg-[#0a0810] p-5 shadow-[0_0_32px_rgba(110,44,242,0.15)] sm:p-6">
-        <div className="mb-4 grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            onClick={() => setMusicTab("beat")}
-            className={`rounded-2xl border-2 px-4 py-4 text-center text-base font-bold transition-all duration-300 sm:text-lg ${
-              musicTab === "beat"
-                ? "border-[#6E2CF2] bg-[#6E2CF2]/20 text-white shadow-[0_0_28px_rgba(110,44,242,0.55)]"
-                : "border-white/10 bg-black/50 text-[var(--muted)] hover:border-white/20"
-            }`}
-          >
-            Beat
-          </button>
-          <button
-            type="button"
-            onClick={() => setMusicTab("full_song")}
-            className={`rounded-2xl border-2 px-4 py-4 text-center text-base font-bold transition-all duration-300 sm:text-lg ${
-              musicTab === "full_song"
-                ? "border-[#6E2CF2] bg-[#6E2CF2]/20 text-white shadow-[0_0_28px_rgba(110,44,242,0.55)]"
-                : "border-white/10 bg-black/50 text-[var(--muted)] hover:border-white/20"
-            }`}
-          >
-            Full Song
-          </button>
-        </div>
-
+        <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/50">Generate</p>
         <div className="space-y-3">
           {musicTab === "beat" ? (
             <button
               type="button"
-              disabled={!!pendingMusicAction}
+              title={canGenerateFromForm ? "" : "Fill in project name and track description"}
+              disabled={!canGenerateFromForm || !!pendingMusicAction}
               onClick={() => void handlePrimaryGenerate("beat")}
               className="group relative w-full overflow-hidden rounded-2xl border-2 border-[#6E2CF2] bg-gradient-to-br from-[#6E2CF2]/30 to-black py-5 text-lg font-bold text-white transition hover:shadow-[0_0_40px_rgba(110,44,242,0.65)] disabled:opacity-50"
             >
@@ -1064,7 +1002,8 @@ This is the hook — big, memorable, repeat it twice.`;
           ) : (
             <button
               type="button"
-              disabled={!!pendingMusicAction}
+              title={canGenerateFromForm ? "" : "Fill in project name and track description"}
+              disabled={!canGenerateFromForm || !!pendingMusicAction}
               onClick={() => void handlePrimaryGenerate("full_song")}
               className="group relative w-full overflow-hidden rounded-2xl border-2 border-[#6E2CF2] bg-gradient-to-br from-[#6E2CF2]/25 to-black py-5 text-lg font-bold text-white transition hover:shadow-[0_0_40px_rgba(110,44,242,0.65)] disabled:opacity-50"
             >
@@ -1076,12 +1015,19 @@ This is the hook — big, memorable, repeat it twice.`;
               </span>
             </button>
           )}
+          {!canGenerateFromForm && (
+            <p className="text-center text-xs text-[var(--muted)]">
+              Add a project name and track description to generate
+            </p>
+          )}
           {pendingMusicAction && (
             <p className="text-center text-xs text-[var(--muted)]">Starting generation…</p>
           )}
         </div>
       </section>
 
+      {project && projectId ? (
+        <>
       {/* More generation cards */}
       <section className="mb-10">
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
@@ -1184,6 +1130,54 @@ This is the hook — big, memorable, repeat it twice.`;
           )}
         </div>
       </section>
+        </>
+      ) : null}
+
+      {!projectId ? (
+        <>
+          <div className="mb-8 flex flex-wrap gap-3">
+            <Link
+              href="/dashboard/projects"
+              className="rounded-xl border border-white/20 px-6 py-3 text-sm font-semibold text-white hover:bg-white/5"
+            >
+              All projects
+            </Link>
+            <Link
+              href="/studio"
+              className="rounded-xl border border-[var(--purple-glow)]/40 px-6 py-3 text-sm text-[var(--purple-glow)] hover:bg-white/5"
+            >
+              ← Studio hub
+            </Link>
+          </div>
+          {projects.length > 0 && (
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+              <p className="mb-4 text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
+                Recent projects
+              </p>
+              <ul className="grid gap-3 sm:grid-cols-2">
+                {projects.slice(0, 8).map((p) => (
+                  <li key={p.id}>
+                    <Link
+                      href={`/studio/music?project=${p.id}`}
+                      className="block rounded-xl border border-white/10 bg-black/40 p-4 transition-all duration-300 hover:border-[#6E2CF2]/50 hover:shadow-[0_0_28px_rgba(110,44,242,0.45)]"
+                    >
+                      <p className="mb-2 text-base font-bold text-white">{p.name}</p>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="rounded-full border border-[var(--neon-green)]/60 bg-[var(--neon-green)]/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--neon-green)]">
+                          {p.genre?.trim() || "Genre"}
+                        </span>
+                        <span className="rounded-full border border-[var(--neon-green)]/60 bg-[var(--neon-green)]/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--neon-green)]">
+                          {Number.isFinite(p.bpm) ? `${Math.round(p.bpm)} BPM` : "— BPM"}
+                        </span>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </>
+      ) : null}
     </div>
   );
 }
