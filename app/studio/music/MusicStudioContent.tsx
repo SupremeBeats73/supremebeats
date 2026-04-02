@@ -488,20 +488,26 @@ export default function MusicStudioContent() {
 
   useEffect(() => {
     if (!projectId || !autoGenerateKind) return;
+    const kindToRun = autoGenerateKind;
     let cancelled = false;
-    void (async () => {
-      try {
-        if (autoGenerateKind === "beat") {
-          await workspaceRef.current?.generateBeat();
-        } else {
-          await workspaceRef.current?.generateFullSong();
+    // Defer one macrotask so StudioWorkspace ref is attached after ?project= navigation.
+    const t = window.setTimeout(() => {
+      void (async () => {
+        if (cancelled) return;
+        try {
+          if (kindToRun === "beat") {
+            await workspaceRef.current?.generateBeat();
+          } else {
+            await workspaceRef.current?.generateFullSong();
+          }
+        } finally {
+          if (!cancelled) setAutoGenerateKind(null);
         }
-      } finally {
-        if (!cancelled) setAutoGenerateKind(null);
-      }
-    })();
+      })();
+    }, 0);
     return () => {
       cancelled = true;
+      window.clearTimeout(t);
     };
   }, [projectId, autoGenerateKind]);
 

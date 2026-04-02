@@ -2,13 +2,28 @@ import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
-/** Beat: ACE-Step (`tags` + `lyrics` + `duration`). Full song: MiniMax Music 2.5 (prompt + lyrics). */
-const REPLICATE_ACE_STEP_PREDICTIONS =
-  "https://api.replicate.com/v1/models/lucataco/ace-step/predictions";
+/**
+ * Replicate: use POST /v1/predictions with `version` + `input`.
+ * Community models (ACE-Step) need owner/name:64-char-version-hash — slug alone can 404.
+ * Official models accept owner/name in `version` (see Replicate changelog 2025-08-05).
+ */
+const REPLICATE_PREDICTIONS_CREATE = "https://api.replicate.com/v1/predictions";
+/** Default ACE-Step version pinned from replicate.com/lucataco/ace-step (override via REPLICATE_ACE_STEP_VERSION). */
+const ACE_STEP_DEFAULT_VERSION_HASH =
+  "280fc4f9ee507577f880a167f639c02622421d8fecf492454320311217b688f1";
 /** ACE-Step instrumental beats: required `lyrics` value (no `prompt` field — use `tags` only for style). */
 const ACE_BEAT_LYRICS_INSTRUMENTAL = "[instrumental]";
-const REPLICATE_MINIMAX_MUSIC_25_PREDICTIONS =
-  "https://api.replicate.com/v1/models/minimax/music-2.5/predictions";
+
+function replicateVersionForKind(kind: "beat" | "full_song"): string {
+  if (kind === "beat") {
+    const env = process.env.REPLICATE_ACE_STEP_VERSION?.trim();
+    if (env) return env;
+    return `lucataco/ace-step:${ACE_STEP_DEFAULT_VERSION_HASH}`;
+  }
+  return (
+    process.env.REPLICATE_MINIMAX_MUSIC_25_VERSION?.trim() || "minimax/music-2.5"
+  );
+}
 const POLL_INTERVAL_MS = 2000;
 const POLL_MAX_WAIT_MS = 300_000; // 5 min — async music jobs
 
@@ -364,8 +379,7 @@ export async function POST(request: Request) {
 
   const replicateModelId =
     kind === "beat" ? "lucataco/ace-step" : "minimax/music-2.5";
-  const replicatePredictionsUrl =
-    kind === "beat" ? REPLICATE_ACE_STEP_PREDICTIONS : REPLICATE_MINIMAX_MUSIC_25_PREDICTIONS;
+  const replicateVersionSpec = replicateVersionForKind(kind);
 
   const aceBeatTags = kind === "beat" ? buildAceBeatTagsPrompt(row) : "";
   const aceDuration = kind === "beat" ? aceDurationSeconds(row) : 0;
@@ -416,6 +430,7 @@ export async function POST(request: Request) {
         input_json: {
           kind,
           model: replicateModelId,
+          version: replicateVersionSpec,
           input: replicateInput,
         },
         created_at: nowIso,
@@ -445,16 +460,20 @@ export async function POST(request: Request) {
     console.log("[generate/music] Replicate prediction (before POST)", {
       kind,
       model: replicateModelId,
+      version: replicateVersionSpec,
       input: replicateInput,
     });
 
-    const createRes = await fetch(replicatePredictionsUrl, {
+    const createRes = await fetch(REPLICATE_PREDICTIONS_CREATE, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ input: replicateInput }),
+      body: JSON.stringify({
+        version: replicateVersionSpec,
+        input: replicateInput,
+      }),
     });
 
     if (!createRes.ok) {
