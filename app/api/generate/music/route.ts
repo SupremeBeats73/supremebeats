@@ -132,27 +132,79 @@ function bpmClamped(row: ProjectRow): number | null {
   return Math.min(300, Math.max(40, Math.round(row.bpm)));
 }
 
-const ACE_BEAT_SUFFIX = "instrumental only, no vocals";
+const ACE_BEAT_SUFFIX = "instrumental, no vocals, no singing, no lyrics";
 
-/** ACE-Step `tags`: genre, mood, BPM, key, instruments, track description; always ends with fixed instrumental suffix. */
+/**
+ * ACE-Step `tags`: comma-separated terms in order — genre (mapped), mood, instruments,
+ * production style (track description), BPM, key, then fixed instrumental suffix.
+ */
 function buildAceBeatTagsPrompt(row: ProjectRow): string {
   const { direction: directionRaw } = unpackStudioPromptMeta(row.prompt);
   const trackDescription = stripLyricSectionTags(directionRaw.trim());
-  const genre = row.genre?.trim() ?? "";
-  const mood = row.mood?.trim() ?? "";
+  const genreRaw = row.genre?.trim() ?? "";
+  const moodRaw = row.mood?.trim() ?? "";
   const keyStr = row.key?.trim() ?? "";
   const bpm = bpmClamped(row);
-  const inst = instrumentsPhrase(row.instruments);
 
-  const parts: string[] = [];
-  if (genre) parts.push(genre);
-  if (mood) parts.push(`${mood} mood`);
-  if (bpm != null) parts.push(`${bpm} BPM`);
-  if (keyStr) parts.push(keyStr);
-  if (inst) parts.push(inst);
-  if (trackDescription) parts.push(trackDescription);
+  const GENRE_TAG_MAP: Record<string, string> = {
+    "Lo-Fi": "lo-fi hip hop, chill, dusty samples, vinyl crackle",
+    "R&B": "contemporary R&B, neo soul, smooth, soulful",
+    Trap: "trap, southern hip hop, heavy 808s, hi-hats",
+    "Hip Hop": "hip hop, boom bap, sample based",
+    Pop: "pop, upbeat, catchy melody",
+    Electronic: "electronic, EDM, synthesizer driven",
+    Jazz: "jazz, swing, improvisation",
+    Drill: "UK drill, dark, sliding 808s",
+    Afrobeats: "afrobeats, afropop, rhythmic, percussive",
+  };
 
-  const core = parts.join(", ").replace(/\s+/g, " ").trim();
+  const genreTerms: string[] = [];
+  const mappedEntry = Object.entries(GENRE_TAG_MAP).find(
+    ([k]) => k.toLowerCase() === genreRaw.toLowerCase()
+  );
+  if (mappedEntry) {
+    genreTerms.push(
+      ...mappedEntry[1]
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    );
+  } else if (genreRaw) {
+    genreTerms.push(genreRaw);
+  }
+
+  const moodTerms = moodRaw
+    ? moodRaw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [];
+
+  const instrumentTerms: string[] = [];
+  if (Array.isArray(row.instruments)) {
+    for (const x of row.instruments) {
+      if (typeof x === "string" && x.trim()) instrumentTerms.push(x.trim());
+    }
+  }
+
+  const productionTerms = trackDescription
+    ? trackDescription
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .slice(0, 24)
+    : [];
+
+  const headParts: string[] = [
+    ...genreTerms,
+    ...moodTerms,
+    ...instrumentTerms,
+    ...productionTerms,
+  ];
+  if (bpm != null) headParts.push(`${bpm} BPM`);
+  if (keyStr) headParts.push(keyStr);
+
+  const core = headParts.join(", ").replace(/\s+/g, " ").trim();
   let tags = core ? `${core}, ${ACE_BEAT_SUFFIX}` : ACE_BEAT_SUFFIX;
   tags = tags.replace(/\s+/g, " ").trim();
   if (tags.length > MAX_ACE_TAGS_CHARS) {
@@ -168,7 +220,9 @@ function buildAceBeatTagsPrompt(row: ProjectRow): string {
       PROMPT_FALLBACK_MIN
     );
   }
-  return tags.slice(0, MAX_ACE_TAGS_CHARS);
+  const finalTags = tags.slice(0, MAX_ACE_TAGS_CHARS);
+  console.log("[generate/music] ACE-Step beat tags (final):", finalTags);
+  return finalTags;
 }
 
 /** ACE-Step duration: project `duration` in seconds, clamped 1–240. */
