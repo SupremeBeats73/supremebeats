@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import NodeID3 from "node-id3";
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
@@ -11,8 +12,6 @@ const REPLICATE_PREDICTIONS_CREATE = "https://api.replicate.com/v1/predictions";
 /** Default ACE-Step version pinned from replicate.com/lucataco/ace-step (override via REPLICATE_ACE_STEP_VERSION). */
 const ACE_STEP_DEFAULT_VERSION_HASH =
   "280fc4f9ee507577f880a167f639c02622421d8fecf492454320311217b688f1";
-/** ACE-Step instrumental beats: required `lyrics` value (no `prompt` field — use `tags` only for style). */
-const ACE_BEAT_LYRICS_INSTRUMENTAL = "[instrumental]";
 
 function replicateVersionForKind(kind: "beat" | "full_song"): string {
   if (kind === "beat") {
@@ -53,6 +52,34 @@ type ProjectRow = {
   vocal_style: string | null;
   instruments: unknown;
 };
+
+/** ACE-Step beats: `lyrics` is required; include project title so output metadata isn’t a generic placeholder. */
+function aceBeatLyricsField(row: ProjectRow): string {
+  const raw = row.name?.trim() || "Supreme Beats";
+  const safe = raw.replace(/[\[\]\n\r]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
+  return `[instrumental] ${safe}`;
+}
+
+/** Overwrite weak/default ID3 title (e.g. “Global transcript”) from the provider MP3. */
+function tagBeatMp3WithProjectTitle(ab: ArrayBuffer, row: ProjectRow): Buffer {
+  const titleBase = row.name?.trim() || "Supreme Beats beat";
+  const title = `${titleBase} – Beat`.replace(/\s+/g, " ").trim().slice(0, 120);
+  const buf = Buffer.from(ab);
+  try {
+    const updated = NodeID3.update(
+      {
+        title,
+        artist: "Supreme Beats Studio",
+        album: titleBase.slice(0, 60),
+      },
+      buf
+    );
+    return Buffer.isBuffer(updated) ? updated : buf;
+  } catch (e) {
+    console.warn("[generate/music] ID3 tag write failed; uploading untagged MP3", e);
+    return buf;
+  }
+}
 
 type ProjectVersionInsertRow = {
   id: string;
@@ -444,7 +471,7 @@ export async function POST(request: Request) {
     kind === "beat"
       ? {
           tags: aceBeatTags,
-          lyrics: ACE_BEAT_LYRICS_INSTRUMENTAL,
+          lyrics: aceBeatLyricsField(row),
           duration: aceDuration,
         }
       : {
@@ -634,9 +661,12 @@ export async function POST(request: Request) {
       );
     }
 
+    const bytesForUpload: Buffer | ArrayBuffer =
+      kind === "beat" ? tagBeatMp3WithProjectTitle(audioBuffer, row) : audioBuffer;
+
     const { error: uploadError } = await supabase.storage
       .from("generated-audio")
-      .upload(storagePath, audioBuffer, {
+      .upload(storagePath, bytesForUpload, {
         cacheControl: "3600",
         upsert: true,
         contentType: "audio/mpeg",

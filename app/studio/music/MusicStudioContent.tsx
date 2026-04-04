@@ -599,10 +599,11 @@ This is the hook — big, memorable, repeat it twice.`;
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--neon-green)]">
             Music Studio
           </p>
-          <h1 className="mb-2 text-2xl font-bold text-white">New project</h1>
+          <h1 className="mb-2 text-2xl font-bold text-white">Build your beat</h1>
           <p className="mb-6 max-w-2xl text-sm text-[var(--muted)]">
-            Set your track details below, then generate a beat or full song on this page. Create project
-            saves without using credits; Generate creates the project if needed and starts your render.
+            <span className="text-white">Generate Beat</span> (or Full Song) is your project: we
+            save the track to your account and start generation in one tap. Tune genre, BPM, and more
+            below — optional before or after your first render.
           </p>
         </>
       ) : (
@@ -692,6 +693,67 @@ This is the hook — big, memorable, repeat it twice.`;
             >
               Full Song
             </button>
+          </div>
+
+          {createError && <p className="text-sm text-red-400">{createError}</p>}
+
+          <div className="rounded-2xl border-2 border-[#6E2CF2]/60 bg-gradient-to-b from-[#6E2CF2]/15 to-black/40 p-5 shadow-[0_0_36px_rgba(110,44,242,0.35)] sm:p-6">
+            <p className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-[#c4a5ff]">
+              {musicTab === "beat" ? "Create project & generate beat" : "Create project & generate song"}
+            </p>
+            <p className="mb-4 text-xs text-white/55">
+              No separate step — this button saves your project and uses your credits to generate.
+            </p>
+            <div className="space-y-3">
+              {musicTab === "beat" ? (
+                <button
+                  type="button"
+                  title={canGenerateFromForm ? "" : "Fill in project name and track description"}
+                  disabled={!canGenerateFromForm || !!pendingMusicAction}
+                  onClick={() => void handlePrimaryGenerate("beat")}
+                  className="group relative w-full overflow-hidden rounded-2xl border-2 border-[#6E2CF2] bg-gradient-to-br from-[#6E2CF2]/40 to-black py-5 text-lg font-bold text-white shadow-[0_0_32px_rgba(110,44,242,0.45)] transition hover:shadow-[0_0_48px_rgba(110,44,242,0.55)] disabled:opacity-50"
+                >
+                  <span className="relative z-10 flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-4">
+                    <span>Generate Beat</span>
+                    <span className="rounded-full bg-black/50 px-3 py-1 text-sm font-bold text-[var(--neon-green)] shadow-[0_0_12px_rgba(34,197,94,0.5)]">
+                      {JOB_CREDIT_COST.beat} credits
+                    </span>
+                  </span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  title={canGenerateFromForm ? "" : "Fill in project name and track description"}
+                  disabled={!canGenerateFromForm || !!pendingMusicAction}
+                  onClick={() => void handlePrimaryGenerate("full_song")}
+                  className="group relative w-full overflow-hidden rounded-2xl border-2 border-[#6E2CF2] bg-gradient-to-br from-[#6E2CF2]/35 to-black py-5 text-lg font-bold text-white shadow-[0_0_32px_rgba(110,44,242,0.45)] transition hover:shadow-[0_0_48px_rgba(110,44,242,0.55)] disabled:opacity-50"
+                >
+                  <span className="relative z-10 flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-4">
+                    <span>Generate Full Song</span>
+                    <span className="rounded-full bg-black/50 px-3 py-1 text-sm font-bold text-[var(--neon-green)] shadow-[0_0_12px_rgba(34,197,94,0.5)]">
+                      {JOB_CREDIT_COST.full_song} credits
+                    </span>
+                  </span>
+                </button>
+              )}
+              {!canGenerateFromForm && (
+                <p className="text-center text-xs text-[var(--muted)]">
+                  Add a project name and track description above
+                </p>
+              )}
+              {pendingMusicAction && (
+                <p className="text-center text-xs text-[var(--muted)]">Starting generation…</p>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)]">
+              Optional details
+            </p>
+            <p className="mt-1 text-xs text-white/45">
+              Refine genre, mood, BPM, and references — or generate first and tweak on the next pass.
+            </p>
           </div>
 
           <div>
@@ -957,18 +1019,7 @@ This is the hook — big, memorable, repeat it twice.`;
             </div>
           )}
 
-          {createError && <p className="text-sm text-red-400">{createError}</p>}
-
-          {!projectId ? (
-            <button
-              type="button"
-              disabled={createSubmitting || referenceUploading}
-              onClick={() => void handleCreateProject()}
-              className="w-full rounded-xl bg-[var(--neon-green)] px-4 py-4 text-base font-bold text-black shadow-[0_0_24px_rgba(34,197,94,0.35)] transition hover:bg-[var(--neon-green-dim)] disabled:opacity-60"
-            >
-              {createSubmitting ? "Saving…" : "CREATE PROJECT"}
-            </button>
-          ) : (
+          {projectId ? (
             <button
               type="button"
               disabled={createSubmitting || referenceUploading}
@@ -977,54 +1028,20 @@ This is the hook — big, memorable, repeat it twice.`;
             >
               {createSubmitting ? "Saving…" : "SAVE PROJECT"}
             </button>
+          ) : (
+            <p className="text-center text-xs text-white/40">
+              <button
+                type="button"
+                disabled={createSubmitting || referenceUploading}
+                onClick={() => void handleCreateProject()}
+                className="text-[var(--muted)] underline decoration-white/20 underline-offset-2 transition hover:text-white disabled:opacity-50"
+              >
+                {createSubmitting ? "Saving draft…" : "Save draft only (no credits, no generation)"}
+              </button>
+            </p>
           )}
         </div>
       </div>
-
-      <section className="mb-10 rounded-2xl border border-[#6E2CF2]/25 bg-[#0a0810] p-5 shadow-[0_0_32px_rgba(110,44,242,0.15)] sm:p-6">
-        <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/50">Generate</p>
-        <div className="space-y-3">
-          {musicTab === "beat" ? (
-            <button
-              type="button"
-              title={canGenerateFromForm ? "" : "Fill in project name and track description"}
-              disabled={!canGenerateFromForm || !!pendingMusicAction}
-              onClick={() => void handlePrimaryGenerate("beat")}
-              className="group relative w-full overflow-hidden rounded-2xl border-2 border-[#6E2CF2] bg-gradient-to-br from-[#6E2CF2]/30 to-black py-5 text-lg font-bold text-white transition hover:shadow-[0_0_40px_rgba(110,44,242,0.65)] disabled:opacity-50"
-            >
-              <span className="relative z-10 flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-4">
-                <span>Generate Beat</span>
-                <span className="rounded-full bg-black/50 px-3 py-1 text-sm font-bold text-[var(--neon-green)] shadow-[0_0_12px_rgba(34,197,94,0.5)]">
-                  {JOB_CREDIT_COST.beat} credits
-                </span>
-              </span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              title={canGenerateFromForm ? "" : "Fill in project name and track description"}
-              disabled={!canGenerateFromForm || !!pendingMusicAction}
-              onClick={() => void handlePrimaryGenerate("full_song")}
-              className="group relative w-full overflow-hidden rounded-2xl border-2 border-[#6E2CF2] bg-gradient-to-br from-[#6E2CF2]/25 to-black py-5 text-lg font-bold text-white transition hover:shadow-[0_0_40px_rgba(110,44,242,0.65)] disabled:opacity-50"
-            >
-              <span className="relative z-10 flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-4">
-                <span>Generate Full Song</span>
-                <span className="rounded-full bg-black/50 px-3 py-1 text-sm font-bold text-[var(--neon-green)] shadow-[0_0_12px_rgba(34,197,94,0.5)]">
-                  {JOB_CREDIT_COST.full_song} credits
-                </span>
-              </span>
-            </button>
-          )}
-          {!canGenerateFromForm && (
-            <p className="text-center text-xs text-[var(--muted)]">
-              Add a project name and track description to generate
-            </p>
-          )}
-          {pendingMusicAction && (
-            <p className="text-center text-xs text-[var(--muted)]">Starting generation…</p>
-          )}
-        </div>
-      </section>
 
       {project && projectId ? (
         <>
